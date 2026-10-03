@@ -6,6 +6,20 @@ from sources: an e-reader push, a (simulated) Kindle sync job, or a manual entry
 see, such as current progress, status, pace, finish date, stack on-track and reading stats, is
 derived from those events in SQL.
 
+## How I approached it
+
+- **A few hours, built with AI.** The goal was to spend only a few hours and build it entirely
+  with AI: I followed the brief and let Claude Code do the work, while I made the product and
+  design calls and reviewed the result.
+- **Frontend first, because the experience matters.** I started with the UI and the user
+  experience: a design and a working mock-up on fake data, which I reviewed and approved before
+  any backend existed. The backend was then built to serve that experience.
+- **Simple, not over-complex.** One concept done properly on both ends, rather than many
+  features done thinly.
+
+**Time spent:** about **3 hours of active work** across three Claude Code sessions on 2–3 October
+(measured from the session logs, leaving out idle gaps longer than 15 minutes).
+
 ## How to run it
 
 The README has the details. In short, start Postgres (`docker compose up -d db`, or a local
@@ -18,6 +32,22 @@ cd frontend && npm install && npm run dev        # http://localhost:5173
 
 `npm test` in `backend/` runs 61 integration tests against the `stacks_test` database.
 `npm run dev:mock` in `frontend/` runs the same UI with no backend.
+
+**I did not run Docker.** I run several AI agents on my Mac at the same time, and Docker slows it
+down too much, so **`docker compose up` was never actually run here**. The compose file is
+standard (Postgres 16, plus an init script that creates the test database) but untested. This is
+how I ran the backend instead, with Postgres 14 from Homebrew:
+
+```bash
+brew install postgresql@14 && brew services start postgresql@14
+psql postgres -c "CREATE ROLE stacks LOGIN PASSWORD 'stacks' CREATEDB;"
+createdb -O stacks stacks && createdb -O stacks stacks_test
+cd backend && cp .env.example .env && npm install
+npm run db:reset      # migrations + seed
+npm run start:dev     # API on http://localhost:3000, docs at /docs
+```
+
+The SQL avoids anything newer than Postgres 14, so it runs on both 14 and 16.
 
 ## Where I got to
 
@@ -86,25 +116,62 @@ library is small), per-user time zones (stats use UTC days), CI, and frontend te
 - Motion is presentation only. I measured it: a drifting background behind blurred panels cost
   a third of the frame budget while scrolling, so the background now moves only with the cursor.
 
-**Local setup.** Postgres ran from Homebrew rather than Docker on my machine, so
-**`docker compose up` was never actually run here**. The compose file is standard (Postgres 16,
-plus an init script that creates the test database), but it is untested.
+## Decisions I made along the way
+
+Claude asked when something was my call; these are my answers, plus the direction I gave in my own
+prompts. All of it is in the transcripts.
+
+| When | Question or topic | My decision |
+|---|---|---|
+| Planning | What to build | A clean Goodreads alternative: search books, organise them, and progress that updates itself, with as little manual input as possible |
+| Planning | There's no Kindle API: how should automatic progress tracking work? | An ingest endpoint plus a simulated sync (the recommended option) |
+| Planning | What to call a user's collection of books (it has a goal, a deadline and progress) | **Stack** |
+| Planning | Book search via the Amazon API? | Open Library instead (Amazon's API is gated, so a reviewer couldn't run it) |
+| Planning | Data layer | Not Kysely with hand-written migrations: I wanted something newer and simpler, so **Drizzle ORM** |
+| Planning | Frontend target | React web (Vite) |
+| Planning | UI direction | Clean, simple and minimal, about the books, but interactive and alive, like the Flash/ActionScript era: smooth animations and transitions with a "wow" effect. One mock-up only, to keep token use down |
+| Planning | Mock-up review | Looks right, lock it in |
+| Planning | AI history | Include the AI chat transcripts in the repo |
+| Setup | Docker? | Not locally; use Homebrew Postgres and still ship `docker-compose.yml` |
+| Setup | Build order | Core setup first, then the whole frontend on mock data for review, then the real backend |
+| UI review 1 | Background | Ambient glow tinted by the book cover in focus |
+| UI review 1 | Fonts | A geometric grotesk (Bricolage Grotesque) with Inter |
+| UI review 1 | What felt off about stacks | The pile visual and the stack page layout |
+| UI review 1 | Search | It should open big in the middle of the page, with the background dimmed |
+| UI review 2 | "Every book I read should be a cool stack" | One special automatic **Read** stack |
+| UI review 2 | Which stats | Books and pages read, breakdown by genre, pace and streaks |
+| UI review 2 | Performance | It must load fast and the animations must feel smooth |
+| UI review 3 | "Up next" section | Remove it |
+| UI review 3 | Library vs stacks | Replace the Library grid with automatic stacks by status, in two rows: my own stacks on top, the automatic ones below |
+| Backend | Order | Full CRUD first (adding, removing, moving books), then the book search API |
+| Backend | Mock data | Keep it, alongside the real API |
+| Wiring | UI | Plug the UI into the real API, fully working: add to stacks, create and delete stacks, move and remove books |
+| Before submitting | Finish | Read stats and Kindle sync on the real API, the AI history, these notes, and a clean-up pass |
+
+## What's missing and needs improving
+
+- **Preloaders** for first load and page transitions.
+- **A user profile.**
+- **Full login and sign-up**: today it's seeded API keys only.
+- **Sharing** stacks and reading progress.
+- **Open bug:** some animations distort the book cover images; this needs fixing.
+- **Full mobile responsiveness.**
+- **A website and marketing pages.**
 
 ## What I'd do next
 
-1. Real accounts (sign-up, key rotation and revocation in the UI) and per-user time zones for
-   stats and streaks.
-2. A real progress source: KOReader's sync protocol is open and fits `ProgressSource` directly.
-3. A `user_book_progress` index check under load, and a materialised stats table if the
-   one-query stats ever got slow (they're one query per page view today).
-4. CI running lint, typecheck, the integration tests and an OpenAPI drift check (regenerate
-   the spec and fail on a diff).
-5. Frontend tests for the trickier client logic: optimistic reorder rollback and the sync
-   polling.
+1. **Playwright** end-to-end tests for the main flows, and **unit tests** for the trickier
+   client logic (optimistic reorder rollback, sync polling).
+2. **Firebase Authentication** for OAuth sign-in, replacing the seeded API keys.
+3. **A security check** of the API and dependencies.
+4. **A deployment CLI and pipeline**, with CI running lint, typecheck, the integration tests and
+   an OpenAPI drift check (regenerate the spec and fail on a diff).
+5. **A real progress source:** KOReader's sync protocol is open and fits `ProgressSource`
+   directly. Also per-user time zones for stats and streaks.
 
 ## Dev diary
 
-Times are local, 2–3 October.
+Times are local (UTC+3), 2–3 October.
 
 - **03:00 Brief and plan.** I chose books because I use Goodreads and dislike it. My first idea,
   Kindle auto-tracking plus Amazon search, hit two walls: there's no Kindle API and Amazon's API
@@ -123,6 +190,8 @@ Times are local, 2–3 October.
 - **05:00 to 05:50 Search, then the UI on the real API.** The API log from my own clicking showed
   Open Library rejecting "the" while I typed. Added moving and reordering.
 - **06:20 Stats in SQL and the sync worker.**
+- **Next day: finishing.** A clean-up pass (shared helpers, a lighter sync worker), the AI
+  history export, these notes, and pushing to GitHub.
 - **A decision I reversed:** the first plan used Kysely with hand-written SQL migrations. It
   felt heavier than I wanted, so I switched to Drizzle before writing any code: simpler, still
   SQL-first, with every generated migration read and the view written by hand.
