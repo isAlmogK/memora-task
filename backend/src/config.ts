@@ -13,6 +13,7 @@ function required(name: string): string {
 
 export const config = {
   databaseUrl: required('DATABASE_URL'),
+  databaseUrlTest: process.env.DATABASE_URL_TEST ?? 'postgres://stacks:stacks@localhost:5432/stacks_test',
   port: Number(process.env.PORT ?? 3000),
   corsOrigins: (process.env.CORS_ORIGINS ?? 'http://localhost:5173').split(',').map((o) => o.trim()),
 };
