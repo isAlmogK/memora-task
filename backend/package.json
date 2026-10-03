@@ -12,7 +12,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
     "db:seed": "tsx src/db/seed.ts",
-    "db:reset": "npm run db:migrate && npm run db:seed"
+    "db:reset": "npm run db:migrate && npm run db:seed",
+    "openapi": "tsc -p tsconfig.build.json --outDir .openapi-build && node .openapi-build/emit-openapi.js"
   },
   "type": "commonjs",
   "dependencies": {

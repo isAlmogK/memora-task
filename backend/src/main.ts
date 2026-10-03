@@ -1,9 +1,10 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { configureApp } from './app.setup';
 import { config } from './config';
+import { createOpenApiDocument } from './openapi';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -11,11 +12,7 @@ async function bootstrap() {
   app.enableCors({ origin: config.corsOrigins });
   app.enableShutdownHooks();
 
-  const openapi = SwaggerModule.createDocument(
-    app,
-    new DocumentBuilder().setTitle('Stacks API').setVersion('1').addBearerAuth().build(),
-  );
-  SwaggerModule.setup('docs', app, openapi);
+  SwaggerModule.setup('docs', app, createOpenApiDocument(app));
 
   await app.listen(config.port);
 }

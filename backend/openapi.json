@@ -1,0 +1,1875 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/v1/health": {
+      "get": {
+        "operationId": "HealthController_check",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/v1/catalog/search": {
+      "get": {
+        "operationId": "CatalogController_search",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "description": "Title and/or author",
+            "schema": {
+              "minLength": 2,
+              "maxLength": 100,
+              "example": "ishiguro",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 40,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CatalogBookDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed (details has one message per field)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Valid key, wrong scope (a device key on a user endpoint)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Open Library is down or slow",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Search Open Library by title or author; each hit says if it is already in your library",
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
+    "/v1/library": {
+      "get": {
+        "operationId": "LibraryController_list",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Only books with this derived status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "want_to_read",
+                "reading",
+                "finished",
+                "abandoned"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LibraryBookDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed (details has one message per field)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Valid key, wrong scope (a device key on a user endpoint)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Your books, most recently active first",
+        "tags": [
+          "library"
+        ]
+      },
+      "post": {
+        "operationId": "LibraryController_add",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddToLibraryBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryBookDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed (details has one message per field)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Valid key, wrong scope (a device key on a user endpoint)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or it belongs to someone else (we don't say which)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicts with existing data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Add a book to your library",
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/v1/library/{id}": {
+      "get": {
+        "operationId": "LibraryController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryBookDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed (details has one message per field)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Valid key, wrong scope (a device key on a user endpoint)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or it belongs to someone else (we don't say which)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "One book with its recent reading events and the stacks it is in",
+        "tags": [
+          "library"
+        ]
+      },
+      "patch": {
+        "operationId": "LibraryController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLibraryBookBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryBookDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed (details has one message per field)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Valid key, wrong scope (a device key on a user endpoint)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or it belongs to someone else (we don't say which)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark finished / put down (or undo either)",
+        "tags": [
+          "library"
+        ]
+      },
+      "delete": {
+        "operationId": "LibraryController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "Validation failed (details has one message per field)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Valid key, wrong scope (a device key on a user endpoint)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or it belongs to someone else (we don't say which)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove a book from your library (its progress and stack memberships go with it)",
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/v1/library/{id}/progress": {
+      "post": {
+        "operationId": "LibraryController_logProgress",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogProgressBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryBookDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed (details has one message per field)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Valid key, wrong scope (a device key on a user endpoint)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or it belongs to someone else (we don't say which)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Log progress by hand: exactly one of percent or page",
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/v1/stacks": {
+      "get": {
+        "operationId": "StacksController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StackSummaryDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Valid key, wrong scope (a device key on a user endpoint)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Your stacks with progress toward each goal, newest first",
+        "tags": [
+          "stacks"
+        ]
+      },
+      "post": {
+        "operationId": "StacksController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateStackBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StackSummaryDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed (details has one message per field)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Valid key, wrong scope (a device key on a user endpoint)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicts with existing data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a stack (names are unique per user, case-insensitive)",
+        "tags": [
+          "stacks"
+        ]
+      }
+    },
+    "/v1/stacks/{id}": {
+      "get": {
+        "operationId": "StacksController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StackDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed (details has one message per field)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Valid key, wrong scope (a device key on a user endpoint)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or it belongs to someone else (we don't say which)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "stacks"
+        ]
+      },
+      "patch": {
+        "operationId": "StacksController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStackBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StackSummaryDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed (details has one message per field)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Valid key, wrong scope (a device key on a user endpoint)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or it belongs to someone else (we don't say which)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicts with existing data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Rename, re-describe, or change the target / due date (null clears)",
+        "tags": [
+          "stacks"
+        ]
+      },
+      "delete": {
+        "operationId": "StacksController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "Validation failed (details has one message per field)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Valid key, wrong scope (a device key on a user endpoint)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or it belongs to someone else (we don't say which)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a stack; its books stay in your library",
+        "tags": [
+          "stacks"
+        ]
+      }
+    },
+    "/v1/stacks/{id}/books/{libraryBookId}": {
+      "put": {
+        "operationId": "StacksController_addBook",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "libraryBookId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StackDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed (details has one message per field)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Valid key, wrong scope (a device key on a user endpoint)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or it belongs to someone else (we don't say which)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Put a library book in the stack (idempotent)",
+        "tags": [
+          "stacks"
+        ]
+      },
+      "delete": {
+        "operationId": "StacksController_removeBook",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "libraryBookId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StackDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed (details has one message per field)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Valid key, wrong scope (a device key on a user endpoint)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or it belongs to someone else (we don't say which)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Take a book out of the stack (idempotent; the book stays in your library)",
+        "tags": [
+          "stacks"
+        ]
+      }
+    },
+    "/v1/progress-events": {
+      "post": {
+        "operationId": "ProgressController_ingest",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceProgressEventBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceProgressAccepted"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed (details has one message per field)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Valid key, wrong scope (a device key on a user endpoint)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or it belongs to someone else (we don't say which)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ingest a reading event from a device (idempotent on externalId)",
+        "tags": [
+          "progress"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Stacks API",
+    "description": "Reading tracker. Every route needs `Authorization: Bearer <key>`. Errors are always `{ error: { code, message, details? } }`.",
+    "version": "1",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "CatalogBookDto": {
+        "type": "object",
+        "properties": {
+          "olWorkKey": {
+            "type": "string",
+            "example": "OL5735363W"
+          },
+          "title": {
+            "type": "string"
+          },
+          "authors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "coverUrl": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://covers.openlibrary.org/b/id/11200092-L.jpg"
+          },
+          "pageCount": {
+            "type": "number",
+            "nullable": true
+          },
+          "firstPublishedYear": {
+            "type": "number",
+            "nullable": true
+          },
+          "genre": {
+            "type": "string",
+            "nullable": true,
+            "description": "One primary genre mapped from Open Library subjects"
+          },
+          "libraryBookId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Set when this book is already in your library"
+          }
+        },
+        "required": [
+          "olWorkKey",
+          "title",
+          "authors",
+          "coverUrl",
+          "pageCount",
+          "firstPublishedYear",
+          "genre",
+          "libraryBookId"
+        ]
+      },
+      "ApiErrorDetail": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "not_found"
+          },
+          "message": {
+            "type": "string",
+            "example": "Library book not found"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "example": {
+              "name": "must be 1–80 characters"
+            }
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ]
+      },
+      "ApiErrorBody": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ApiErrorDetail"
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "BookDto": {
+        "type": "object",
+        "properties": {
+          "olWorkKey": {
+            "type": "string",
+            "example": "OL5735363W"
+          },
+          "title": {
+            "type": "string"
+          },
+          "authors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "coverUrl": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://covers.openlibrary.org/b/id/11200092-L.jpg"
+          },
+          "pageCount": {
+            "type": "number",
+            "nullable": true
+          },
+          "firstPublishedYear": {
+            "type": "number",
+            "nullable": true
+          },
+          "genre": {
+            "type": "string",
+            "nullable": true,
+            "description": "One primary genre mapped from Open Library subjects"
+          }
+        },
+        "required": [
+          "olWorkKey",
+          "title",
+          "authors",
+          "coverUrl",
+          "pageCount",
+          "firstPublishedYear",
+          "genre"
+        ]
+      },
+      "ProgressDto": {
+        "type": "object",
+        "properties": {
+          "percent": {
+            "type": "number",
+            "description": "Canonical unit (e-readers report percent). 0 when nothing logged."
+          },
+          "page": {
+            "type": "number",
+            "nullable": true
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "device",
+              "kindle_sim"
+            ],
+            "nullable": true
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "percent",
+          "page",
+          "source",
+          "occurredAt"
+        ]
+      },
+      "PaceDto": {
+        "type": "object",
+        "properties": {
+          "percentPerDay": {
+            "type": "number",
+            "nullable": true,
+            "description": "Percent gained over the trailing 14 days ÷ 14; null unless reading"
+          },
+          "pagesPerDay": {
+            "type": "number",
+            "nullable": true
+          },
+          "eta": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Projected finish; null when pace ≤ 0"
+          }
+        },
+        "required": [
+          "percentPerDay",
+          "pagesPerDay",
+          "eta"
+        ]
+      },
+      "LibraryBookDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "book": {
+            "$ref": "#/components/schemas/BookDto"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "want_to_read",
+              "reading",
+              "finished",
+              "abandoned"
+            ]
+          },
+          "addedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "progress": {
+            "$ref": "#/components/schemas/ProgressDto"
+          },
+          "pace": {
+            "$ref": "#/components/schemas/PaceDto"
+          }
+        },
+        "required": [
+          "id",
+          "book",
+          "status",
+          "addedAt",
+          "finishedAt",
+          "progress",
+          "pace"
+        ]
+      },
+      "AddToLibraryBody": {
+        "type": "object",
+        "properties": {
+          "olWorkKey": {
+            "type": "string",
+            "example": "OL5735363W",
+            "description": "Open Library work key (from /v1/catalog/search)"
+          }
+        },
+        "required": [
+          "olWorkKey"
+        ]
+      },
+      "ReadingEventDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "percent": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number",
+            "nullable": true
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "device",
+              "kindle_sim"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "percent",
+          "page",
+          "source",
+          "occurredAt",
+          "receivedAt"
+        ]
+      },
+      "StackRefDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "LibraryBookDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "book": {
+            "$ref": "#/components/schemas/BookDto"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "want_to_read",
+              "reading",
+              "finished",
+              "abandoned"
+            ]
+          },
+          "addedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "progress": {
+            "$ref": "#/components/schemas/ProgressDto"
+          },
+          "pace": {
+            "$ref": "#/components/schemas/PaceDto"
+          },
+          "events": {
+            "description": "Newest first (by when you read, not when it arrived), max 50",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReadingEventDto"
+            }
+          },
+          "stacks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StackRefDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "book",
+          "status",
+          "addedAt",
+          "finishedAt",
+          "progress",
+          "pace",
+          "events",
+          "stacks"
+        ]
+      },
+      "UpdateLibraryBookBody": {
+        "type": "object",
+        "properties": {
+          "finished": {
+            "type": "boolean",
+            "description": "true marks it finished now; false clears an explicit finish"
+          },
+          "abandoned": {
+            "type": "boolean",
+            "description": "true puts it down; false picks it back up"
+          }
+        }
+      },
+      "LogProgressBody": {
+        "type": "object",
+        "properties": {
+          "percent": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "example": 42.5
+          },
+          "page": {
+            "type": "number",
+            "minimum": 0,
+            "example": 210
+          }
+        }
+      },
+      "StackPreviewBookDto": {
+        "type": "object",
+        "properties": {
+          "libraryBookId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "coverUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "pageCount": {
+            "type": "number",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "want_to_read",
+              "reading",
+              "finished",
+              "abandoned"
+            ]
+          }
+        },
+        "required": [
+          "libraryBookId",
+          "title",
+          "coverUrl",
+          "pageCount",
+          "status"
+        ]
+      },
+      "StackSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "targetCount": {
+            "type": "number",
+            "nullable": true
+          },
+          "dueOn": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "bookCount": {
+            "type": "number"
+          },
+          "finishedCount": {
+            "type": "number"
+          },
+          "goal": {
+            "type": "number",
+            "description": "targetCount, or bookCount when there is no target"
+          },
+          "onTrack": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "null without a due date; otherwise finished/goal ≥ fraction of [created, due] elapsed"
+          },
+          "preview": {
+            "description": "First 8 books in stack order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StackPreviewBookDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "targetCount",
+          "dueOn",
+          "createdAt",
+          "bookCount",
+          "finishedCount",
+          "goal",
+          "onTrack",
+          "preview"
+        ]
+      },
+      "CreateStackBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "example": "Autumn sci-fi"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 500
+          },
+          "targetCount": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 500,
+            "description": "How many books to finish"
+          },
+          "dueOn": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "example": "2026-12-31"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "StackDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "targetCount": {
+            "type": "number",
+            "nullable": true
+          },
+          "dueOn": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "bookCount": {
+            "type": "number"
+          },
+          "finishedCount": {
+            "type": "number"
+          },
+          "goal": {
+            "type": "number",
+            "description": "targetCount, or bookCount when there is no target"
+          },
+          "onTrack": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "null without a due date; otherwise finished/goal ≥ fraction of [created, due] elapsed"
+          },
+          "preview": {
+            "description": "First 8 books in stack order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StackPreviewBookDto"
+            }
+          },
+          "books": {
+            "description": "All books, in stack order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LibraryBookDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "targetCount",
+          "dueOn",
+          "createdAt",
+          "bookCount",
+          "finishedCount",
+          "goal",
+          "onTrack",
+          "preview",
+          "books"
+        ]
+      },
+      "UpdateStackBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 500
+          },
+          "targetCount": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 500
+          },
+          "dueOn": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          }
+        }
+      },
+      "DeviceProgressEventBody": {
+        "type": "object",
+        "properties": {
+          "libraryBookId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "percent": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "occurredAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the reading happened (not when it was sent)"
+          },
+          "externalId": {
+            "type": "string",
+            "description": "The device's own id for this event; resending it is a no-op"
+          }
+        },
+        "required": [
+          "libraryBookId",
+          "percent",
+          "occurredAt",
+          "externalId"
+        ]
+      },
+      "DeviceProgressAccepted": {
+        "type": "object",
+        "properties": {
+          "recorded": {
+            "type": "boolean",
+            "description": "false when this externalId was already recorded"
+          }
+        },
+        "required": [
+          "recorded"
+        ]
+      }
+    }
+  }
+}

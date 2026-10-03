@@ -3,7 +3,7 @@ import tseslint from 'typescript-eslint';
 import globals from 'globals';
 
 export default tseslint.config(
-  { ignores: ['dist', 'drizzle', 'coverage', 'eslint.config.mjs', 'jest.config.js'] },
+  { ignores: ['dist', '.openapi-build', 'drizzle', 'coverage', 'eslint.config.mjs', 'jest.config.js'] },
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   {
