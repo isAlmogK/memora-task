@@ -196,6 +196,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Your reading in numbers: books and pages, genres, months, days, streaks */
+        get: operations["StatsController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sync-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Your sync runs, newest first */
+        get: operations["SyncController_list"];
+        put?: never;
+        /** Start a Kindle sync (or get the one already in progress); poll it for status */
+        post: operations["SyncController_start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sync-runs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SyncController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -427,6 +478,76 @@ export interface components {
         DeviceProgressAccepted: {
             /** @description false when this externalId was already recorded */
             recorded: boolean;
+        };
+        YearAndAllTime: {
+            thisYear: number;
+            allTime: number;
+        };
+        GenreCount: {
+            genre: string;
+            books: number;
+            /** @description Sum of page counts of those books */
+            pages: number;
+        };
+        MonthCount: {
+            /** @example 2026-09 */
+            month: string;
+            /** @description Books finished that month */
+            books: number;
+            /** @description Pages read that month */
+            pages: number;
+        };
+        DayCount: {
+            /** @example 2026-09-30 */
+            day: string;
+            pages: number;
+        };
+        Pace: {
+            /** @description Pages read in the last 30 days ÷ 30, one decimal */
+            pagesPerDay30d: number;
+            /** @description Consecutive reading days ending today (or yesterday) */
+            currentStreakDays: number;
+            longestStreakDays: number;
+        };
+        FastestFinish: {
+            /** Format: uuid */
+            libraryBookId: string;
+            title: string;
+            /** @description Days from the first reading event to finished (at least 1) */
+            days: number;
+        };
+        ReadingStatsDto: {
+            year: number;
+            booksFinished: components["schemas"]["YearAndAllTime"];
+            pagesRead: components["schemas"]["YearAndAllTime"];
+            /** @description Books finished this year by primary genre, most first */
+            genres: components["schemas"]["GenreCount"][];
+            /** @description The last 12 calendar months, oldest first */
+            monthly: components["schemas"]["MonthCount"][];
+            /** @description The last 182 days (26 weeks), oldest first */
+            daily: components["schemas"]["DayCount"][];
+            pace: components["schemas"]["Pace"];
+            fastestFinish: components["schemas"]["FastestFinish"] | null;
+        };
+        SyncRunDto: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            source: "manual" | "device" | "kindle_sim";
+            /**
+             * @description queued → running → succeeded | failed
+             * @enum {string}
+             */
+            status: "queued" | "running" | "succeeded" | "failed";
+            /** @description Events recorded so far (counts up while running) */
+            eventsIngested: number;
+            error: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            startedAt: string | null;
+            /** Format: date-time */
+            finishedAt: string | null;
         };
     };
     responses: never;
@@ -1400,6 +1521,185 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeviceProgressAccepted"];
+                };
+            };
+            /** @description Validation failed (details has one message per field) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /** @description Missing, unknown or revoked API key */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /** @description Valid key, wrong scope (a device key on a user endpoint) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /** @description Not found, or it belongs to someone else (we don't say which) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+        };
+    };
+    StatsController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadingStatsDto"];
+                };
+            };
+            /** @description Missing, unknown or revoked API key */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /** @description Valid key, wrong scope (a device key on a user endpoint) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+        };
+    };
+    SyncController_list: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncRunDto"][];
+                };
+            };
+            /** @description Validation failed (details has one message per field) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /** @description Missing, unknown or revoked API key */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /** @description Valid key, wrong scope (a device key on a user endpoint) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+        };
+    };
+    SyncController_start: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncRunDto"];
+                };
+            };
+            /** @description Missing, unknown or revoked API key */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /** @description Valid key, wrong scope (a device key on a user endpoint) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+        };
+    };
+    SyncController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncRunDto"];
                 };
             };
             /** @description Validation failed (details has one message per field) */

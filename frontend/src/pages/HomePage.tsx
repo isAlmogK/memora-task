@@ -56,8 +56,11 @@ function NowReading() {
 }
 
 function HeroCarousel({ books }: { books: LibraryBookDto[] }) {
-  const [[index, dir], setPage] = useState<[number, number]>([0, 1]);
-  const current = Math.min(index, books.length - 1); // a book can leave "reading" mid-view (finished in a sync)
+  // Remember the book, not the position: a sync re-sorts the list by latest activity, and
+  // the hero shouldn't swap books under you. If yours leaves "reading" (finished), show the first.
+  const [[bookId, dir], setPage] = useState<[string | null, number]>([null, 1]);
+  const found = books.findIndex((b) => b.id === bookId);
+  const current = found >= 0 ? found : 0;
   const dragged = useRef(false);
   const book = books[current];
   useAmbientFrom(book?.book.coverUrl);
@@ -65,7 +68,7 @@ function HeroCarousel({ books }: { books: LibraryBookDto[] }) {
 
   function go(next: number) {
     const wrapped = (next + books.length) % books.length;
-    setPage([wrapped, next > current ? 1 : -1]);
+    setPage([books[wrapped]!.id, next > current ? 1 : -1]);
   }
 
   function onDragEnd(_: unknown, info: PanInfo) {

@@ -2,7 +2,7 @@ import createClient from 'openapi-fetch';
 import type { StacksApi } from './client';
 import { ApiError } from './errors';
 import type { paths } from './schema';
-import type { ApiErrorBody, ReadingStatsDto, SyncRunDto } from './types';
+import type { ApiErrorBody } from './types';
 
 /**
  * The real API. Paths, params and bodies are checked against the generated OpenAPI types.
@@ -31,16 +31,6 @@ async function unwrap<T>(request: Promise<{ data?: T; error?: unknown; response:
   if (response.ok) return data as T; // 204s come back as undefined
   const body = (error as ApiErrorBody | undefined)?.error;
   throw new ApiError(response.status, body?.code ?? 'http_error', body?.message ?? `Request failed (${response.status})`, body?.details);
-}
-
-/** For endpoints the backend doesn't serve yet (not in the spec, so no generated types). */
-async function untyped<T>(method: 'GET' | 'POST', path: string): Promise<T> {
-  return unwrap(
-    fetch(path, { method, headers: { Authorization: `Bearer ${KEY}` } }).then(async (response) => {
-      const json: unknown = await response.json().catch(() => undefined);
-      return response.ok ? { data: json as T, response } : { error: json, response };
-    }),
-  );
 }
 
 export const httpApi: StacksApi = {
@@ -72,10 +62,8 @@ export const httpApi: StacksApi = {
       }),
     ),
 
-  // TEMPORARY: the next backend step. Until then these get the API's 404 and the UI shows
-  // its error state.
-  getStats: () => untyped<ReadingStatsDto>('GET', '/v1/stats'),
-  startSync: () => untyped<SyncRunDto>('POST', '/v1/sync-runs'),
-  getSyncRun: (id) => untyped<SyncRunDto>('GET', `/v1/sync-runs/${id}`),
-  listSyncRuns: (limit) => untyped<SyncRunDto[]>('GET', `/v1/sync-runs?limit=${limit}`),
+  getStats: () => unwrap(client.GET('/v1/stats')),
+  startSync: () => unwrap(client.POST('/v1/sync-runs')),
+  getSyncRun: (id) => unwrap(client.GET('/v1/sync-runs/{id}', { params: { path: { id } } })),
+  listSyncRuns: (limit) => unwrap(client.GET('/v1/sync-runs', { params: { query: { limit } } })),
 };
