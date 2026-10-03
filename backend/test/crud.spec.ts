@@ -121,3 +121,68 @@ describe('stacks', () => {
     await alice().get(`/v1/library/${book.id}`).expect(200);
   });
 });
+
+describe('reordering and moving books', () => {
+  const libraryIds = new Map<string, string>();
+  beforeEach(() => libraryIds.clear());
+
+  async function stackWith(name: string, keys: string[]) {
+    const { body: s } = await alice().post('/v1/stacks', { name });
+    const ids: string[] = [];
+    for (const k of keys) {
+      const res = await alice().post('/v1/library', { olWorkKey: k });
+      if (res.status === 201) libraryIds.set(k, res.body.id as string); // 409: added by an earlier stack
+      const id = libraryIds.get(k)!;
+      await alice().put(`/v1/stacks/${s.id}/books/${id}`).expect(200);
+      ids.push(id);
+    }
+    return { stackId: s.id as string, ids };
+  }
+  const order = (body: { books: { id: string }[] }) => body.books.map((b) => b.id);
+
+  it('reorders when sent every book exactly once, and the order sticks', async () => {
+    const { stackId, ids } = await stackWith('Pile', ['OL893414W', 'OL21745884W', 'OL1W']);
+    const reversed = [...ids].reverse();
+    const res = await alice().put(`/v1/stacks/${stackId}/order`).send({ libraryBookIds: reversed }).expect(200);
+    expect(order(res.body)).toEqual(reversed);
+    expect(order((await alice().get(`/v1/stacks/${stackId}`)).body)).toEqual(reversed);
+    // the fan preview follows the new order too
+    expect((res.body.preview as { libraryBookId: string }[]).map((p) => p.libraryBookId)).toEqual(reversed);
+  });
+
+  it('rejects a stale or partial order instead of half-applying it', async () => {
+    const { stackId, ids } = await stackWith('Pile', ['OL893414W', 'OL21745884W']);
+    for (const bad of [[ids[0]], [ids[0], ids[0]], [...ids, '00000000-0000-0000-0000-000000000000'], ['nope']]) {
+      await alice().put(`/v1/stacks/${stackId}/order`).send({ libraryBookIds: bad }).expect(400);
+    }
+    expect(order((await alice().get(`/v1/stacks/${stackId}`)).body)).toEqual(ids);
+  });
+
+  it('moves a book to the end of another stack in one step', async () => {
+    const a = await stackWith('From', ['OL893414W', 'OL21745884W']);
+    const b = await stackWith('To', ['OL1W']);
+    const res = await alice().post(`/v1/stacks/${a.stackId}/books/${a.ids[0]}/move`, { toStackId: b.stackId }).expect(200);
+    expect(order(res.body.from)).toEqual([a.ids[1]]);
+    expect(order(res.body.to)).toEqual([b.ids[0], a.ids[0]]);
+  });
+
+  it('moving into a stack that already has the book just takes it out of the source', async () => {
+    const a = await stackWith('From', ['OL893414W']);
+    const b = await stackWith('To', ['OL893414W']);
+    const res = await alice().post(`/v1/stacks/${a.stackId}/books/${a.ids[0]}/move`, { toStackId: b.stackId }).expect(200);
+    expect([res.body.from.bookCount, res.body.to.bookCount]).toEqual([0, 1]);
+  });
+
+  it('404s for a book not in the source stack or a stack that is not yours, and changes nothing', async () => {
+    const a = await stackWith('From', ['OL893414W']);
+    const b = await stackWith('To', []);
+    const { body: bobStack } = await as(h.app, KEYS.bob).post('/v1/stacks', { name: 'Bob' });
+
+    await alice().post(`/v1/stacks/${b.stackId}/books/${a.ids[0]}/move`, { toStackId: a.stackId }).expect(404);
+    await alice().post(`/v1/stacks/${a.stackId}/books/${a.ids[0]}/move`, { toStackId: bobStack.id }).expect(404);
+    await as(h.app, KEYS.bob).post(`/v1/stacks/${a.stackId}/books/${a.ids[0]}/move`, { toStackId: bobStack.id }).expect(404);
+    await alice().post(`/v1/stacks/${a.stackId}/books/${a.ids[0]}/move`, { toStackId: a.stackId }).expect(400);
+
+    expect((await alice().get(`/v1/stacks/${a.stackId}`)).body.bookCount).toBe(1);
+  });
+});

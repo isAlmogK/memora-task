@@ -109,7 +109,7 @@ export class StacksService {
         userId,
         stackId,
         userBookId,
-        position: sql`(select coalesce(max(${stackBook.position}), 0) + 1 from ${stackBook} where ${stackBook.stackId} = ${stackId})`,
+        position: this.nextPosition(stackId),
       })
       .onConflictDoNothing({ target: [stackBook.stackId, stackBook.userBookId] });
     return this.detail(userId, stackId);
@@ -123,7 +123,68 @@ export class StacksService {
     return this.detail(userId, stackId);
   }
 
+  /**
+   * Replaces the stack's order. The list must be exactly the stack's books (no more, no
+   * fewer, no repeats): a client working from a stale copy gets a 400, not a silent
+   * half-reorder. The stack row is locked so two reorders can't interleave.
+   */
+  async reorder(userId: string, stackId: string, ids: string[]): Promise<StackDetailDto> {
+    await this.db.transaction(async (tx) => {
+      const [owned] = await tx
+        .select({ id: stack.id })
+        .from(stack)
+        .where(and(eq(stack.userId, userId), eq(stack.id, stackId)))
+        .for('update');
+      if (!owned) throw ApiError.notFound('Stack');
+
+      const members = await tx.select({ id: stackBook.userBookId }).from(stackBook).where(eq(stackBook.stackId, stackId));
+      const current = new Set(members.map((m) => m.id));
+      if (ids.length !== current.size || ids.some((id) => !current.has(id))) {
+        throw ApiError.validation({ libraryBookIds: 'must list every book in the stack exactly once' });
+      }
+      await tx.execute(sql`
+        update ${stackBook} sb set position = o.ord
+        from unnest(${sql.param(ids)}::uuid[]) with ordinality as o(id, ord)
+        where sb.stack_id = ${stackId} and sb.user_book_id = o.id
+      `);
+    });
+    return this.detail(userId, stackId);
+  }
+
+  /**
+   * Out of one stack and onto the end of another, in one transaction: the book is never in
+   * both or neither. If it's already in the target, the move just takes it out of the source.
+   */
+  async move(userId: string, fromId: string, userBookId: string, toId: string): Promise<{ from: StackDetailDto; to: StackDetailDto }> {
+    if (fromId === toId) throw ApiError.validation({ toStackId: 'must be a different stack' });
+    await this.db.transaction(async (tx) => {
+      const owned = await tx
+        .select({ id: stack.id })
+        .from(stack)
+        .where(and(eq(stack.userId, userId), inArray(stack.id, [fromId, toId])));
+      if (!owned.some((s) => s.id === fromId)) throw ApiError.notFound('Stack');
+      if (!owned.some((s) => s.id === toId)) throw ApiError.notFound('Target stack');
+
+      const [removed] = await tx
+        .delete(stackBook)
+        .where(and(eq(stackBook.userId, userId), eq(stackBook.stackId, fromId), eq(stackBook.userBookId, userBookId)))
+        .returning({ id: stackBook.userBookId });
+      if (!removed) throw new ApiError(404, 'not_found', 'That book isn’t in this stack');
+
+      await tx
+        .insert(stackBook)
+        .values({ userId, stackId: toId, userBookId, position: this.nextPosition(toId) })
+        .onConflictDoNothing({ target: [stackBook.stackId, stackBook.userBookId] });
+    });
+    const [from, to] = await Promise.all([this.detail(userId, fromId), this.detail(userId, toId)]);
+    return { from, to };
+  }
+
   // ---------- internals ----------
+
+  private nextPosition(stackId: string) {
+    return sql`(select coalesce(max(${stackBook.position}), 0) + 1 from ${stackBook} where ${stackBook.stackId} = ${stackId})`;
+  }
 
   /** Clean 404s for the API. The composite FKs would reject a foreign book anyway; this just names the problem. */
   private async assertOwned(userId: string, stackId: string, userBookId: string): Promise<void> {

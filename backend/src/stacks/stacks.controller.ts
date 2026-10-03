@@ -3,7 +3,15 @@ import { ApiCreatedResponse, ApiNoContentResponse, ApiOkResponse, ApiOperation, 
 import { Caller, CurrentCaller } from '../auth/auth.decorators';
 import { ApiErrors } from '../common/api-docs';
 import { uuidParam } from '../common/validation';
-import { CreateStackBody, StackDetailDto, StackSummaryDto, UpdateStackBody } from './stacks.dto';
+import {
+  CreateStackBody,
+  MoveResultDto,
+  MoveStackBookBody,
+  ReorderStackBody,
+  StackDetailDto,
+  StackSummaryDto,
+  UpdateStackBody,
+} from './stacks.dto';
 import { StacksService } from './stacks.service';
 
 @ApiTags('stacks')
@@ -77,5 +85,31 @@ export class StacksController {
     @Param('libraryBookId', uuidParam('libraryBookId')) libraryBookId: string,
   ): Promise<StackDetailDto> {
     return this.stacks.removeBook(caller.userId, id, libraryBookId);
+  }
+
+  @Put(':id/order')
+  @ApiOperation({ summary: 'Reorder the stack: send every book id in the new order' })
+  @ApiOkResponse({ type: StackDetailDto })
+  @ApiErrors(400, 404)
+  reorder(
+    @CurrentCaller() caller: Caller,
+    @Param('id', uuidParam()) id: string,
+    @Body() body: ReorderStackBody,
+  ): Promise<StackDetailDto> {
+    return this.stacks.reorder(caller.userId, id, body.libraryBookIds);
+  }
+
+  @Post(':id/books/:libraryBookId/move')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Move a book to another stack (atomic; it goes to the end)' })
+  @ApiOkResponse({ type: MoveResultDto })
+  @ApiErrors(400, 404)
+  move(
+    @CurrentCaller() caller: Caller,
+    @Param('id', uuidParam()) id: string,
+    @Param('libraryBookId', uuidParam('libraryBookId')) libraryBookId: string,
+    @Body() body: MoveStackBookBody,
+  ): Promise<MoveResultDto> {
+    return this.stacks.move(caller.userId, id, libraryBookId, body.toStackId);
   }
 }

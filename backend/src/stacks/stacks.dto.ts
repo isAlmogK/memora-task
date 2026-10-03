@@ -1,6 +1,20 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Length, Matches, Max, MaxLength, Min, ValidateIf } from 'class-validator';
+import {
+  ArrayMaxSize,
+  ArrayUnique,
+  IsArray,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Length,
+  Matches,
+  Max,
+  MaxLength,
+  Min,
+  ValidateIf,
+} from 'class-validator';
 import { LibraryBookDto, READING_STATUSES, type ReadingStatus } from '../library/library.dto';
 
 const trim = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value);
@@ -67,6 +81,22 @@ export class UpdateStackBody {
   dueOn?: string | null;
 }
 
+/** The stack's complete new order: every book in it, exactly once. */
+export class ReorderStackBody {
+  @ApiProperty({ type: [String], format: 'uuid', description: 'Library book ids, first to last' })
+  @IsArray({ message: 'must be a list of library book ids' })
+  @ArrayMaxSize(500)
+  @ArrayUnique({ message: 'must not repeat a book' })
+  @IsUUID('all', { each: true, message: 'must contain only UUIDs' })
+  libraryBookIds!: string[];
+}
+
+export class MoveStackBookBody {
+  @ApiProperty({ format: 'uuid', description: 'The stack to move the book into (it goes to the end)' })
+  @IsUUID('all', { message: 'must be a UUID' })
+  toStackId!: string;
+}
+
 // ---------- responses ----------
 
 export class StackPreviewBookDto {
@@ -98,4 +128,10 @@ export class StackSummaryDto {
 
 export class StackDetailDto extends StackSummaryDto {
   @ApiProperty({ type: [LibraryBookDto], description: 'All books, in stack order' }) books!: LibraryBookDto[];
+}
+
+/** Both sides of a move, so the UI can update the stack it left and the one it joined. */
+export class MoveResultDto {
+  @ApiProperty({ type: StackDetailDto }) from!: StackDetailDto;
+  @ApiProperty({ type: StackDetailDto }) to!: StackDetailDto;
 }

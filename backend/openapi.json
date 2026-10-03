@@ -1110,6 +1110,186 @@
         ]
       }
     },
+    "/v1/stacks/{id}/order": {
+      "put": {
+        "operationId": "StacksController_reorder",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderStackBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StackDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed (details has one message per field)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Valid key, wrong scope (a device key on a user endpoint)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or it belongs to someone else (we don't say which)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reorder the stack: send every book id in the new order",
+        "tags": [
+          "stacks"
+        ]
+      }
+    },
+    "/v1/stacks/{id}/books/{libraryBookId}/move": {
+      "post": {
+        "operationId": "StacksController_move",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "libraryBookId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveStackBookBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MoveResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed (details has one message per field)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Valid key, wrong scope (a device key on a user endpoint)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or it belongs to someone else (we don't say which)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Move a book to another stack (atomic; it goes to the end)",
+        "tags": [
+          "stacks"
+        ]
+      }
+    },
     "/v1/progress-events": {
       "post": {
         "operationId": "ProgressController_ingest",
@@ -1828,6 +2008,50 @@
             "nullable": true
           }
         }
+      },
+      "ReorderStackBody": {
+        "type": "object",
+        "properties": {
+          "libraryBookIds": {
+            "description": "Library book ids, first to last",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "libraryBookIds"
+        ]
+      },
+      "MoveStackBookBody": {
+        "type": "object",
+        "properties": {
+          "toStackId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The stack to move the book into (it goes to the end)"
+          }
+        },
+        "required": [
+          "toStackId"
+        ]
+      },
+      "MoveResultDto": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "$ref": "#/components/schemas/StackDetailDto"
+          },
+          "to": {
+            "$ref": "#/components/schemas/StackDetailDto"
+          }
+        },
+        "required": [
+          "from",
+          "to"
+        ]
       },
       "DeviceProgressEventBody": {
         "type": "object",
