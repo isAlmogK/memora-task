@@ -9,6 +9,10 @@ text the tool injected (system reminders, skill instructions), and the output of
 commands; the git history shows what those produced. Emails and the home directory are
 redacted. The only keys anywhere are the seeded **dev** API keys, which are public on purpose.
 
+One thing is not verbatim: in session 01 I pasted the company's private reply to my questions
+about AI use and focus. It's published as a one-paragraph paraphrase (marked as such), not word
+for word. My questions are kept as I wrote them.
+
 | # | Session | Covers |
 |---|---------|--------|
 | 01 | [Design brainstorm](01-design-brainstorm.md) | Reading the brief, the product idea, data-layer choice (Kysely → Drizzle), UI direction, the plan |

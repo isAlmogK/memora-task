@@ -17,8 +17,9 @@ derived from those events in SQL.
 - **Simple, not over-complex.** One concept done properly on both ends, rather than many
   features done thinly.
 
-**Time spent:** about **3 hours of active work** across three Claude Code sessions on 2–3 October
-(measured from the session logs, leaving out idle gaps longer than 15 minutes).
+**Time spent:** about **3 hours of active work** (3h 08m) across three Claude Code sessions on
+3 October, between 02:27 and 17:20 local time with a long break in the middle. It's measured from
+the session logs, leaving out idle gaps longer than 15 minutes.
 
 ## How to run it
 
@@ -171,7 +172,7 @@ prompts. All of it is in the transcripts.
 
 ## Dev diary
 
-Times are local (UTC+3), 2–3 October.
+Times are local (UTC+3), 3 October.
 
 - **03:00 Brief and plan.** I chose books because I use Goodreads and dislike it. My first idea,
   Kindle auto-tracking plus Amazon search, hit two walls: there's no Kindle API and Amazon's API
@@ -190,7 +191,7 @@ Times are local (UTC+3), 2–3 October.
 - **05:00 to 05:50 Search, then the UI on the real API.** The API log from my own clicking showed
   Open Library rejecting "the" while I typed. Added moving and reordering.
 - **06:20 Stats in SQL and the sync worker.**
-- **Next day: finishing.** A clean-up pass (shared helpers, a lighter sync worker), the AI
+- **Afternoon, after a break: finishing.** A clean-up pass (shared helpers, a lighter sync worker), the AI
   history export, these notes, and pushing to GitHub.
 - **A decision I reversed:** the first plan used Kysely with hand-written SQL migrations. It
   felt heavier than I wanted, so I switched to Drizzle before writing any code: simpler, still

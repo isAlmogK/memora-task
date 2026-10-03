@@ -27,7 +27,27 @@ const redact = (s) =>
   s
     .replaceAll(HOME, '~')
     .replaceAll(USER_SLUG, '-~')
-    .replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, (m) => (m.endsWith('anthropic.com') ? m : '[email]'));
+    .replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, (m) => (m.endsWith('anthropic.com') ? m : '[email]'))
+    .replace(REPLY_PHRASES, '[phrase from the private reply]');
+
+/**
+ * Private messages pasted into a prompt, published as a summary instead of verbatim. The
+ * transcripts are otherwise faithful; ai-history/README.md says what was replaced.
+ */
+const PARAPHRASED = [
+  [
+    /Their answ\w*\s*\n\s*On AI:[\s\S]*?go for what appeals to you for style points\./,
+    "*[The company's reply, paraphrased: use AI the way you would on the job. They grade the " +
+      'judgement around it (what you used it for, what you did not trust it with, where it was wrong ' +
+      'and how you caught it), not hand-written vs. generated code, and including the AI transcript ' +
+      "is welcome. On focus: the brief's \"What We'll Look For\" list is in priority order (domain " +
+      'model, migration and SQL first, then the API contract, then how the two halves fit); scale and ' +
+      'breadth are not scored, and anything beyond that is style points.]*',
+  ],
+];
+
+/** Phrases from that reply, wherever they turn up later (e.g. as search terms in a command). */
+const REPLY_PHRASES = /We are grading the judgement|Another thing applicants|Use it the way you would on the job/g;
 
 /** Strips harness-injected blocks from a user message; returns '' if nothing human is left. */
 function humanText(text) {
@@ -35,6 +55,7 @@ function humanText(text) {
     const name = text.match(/skills\/([^/\s]+)/)?.[1] ?? 'a skill';
     return `*[skill instructions loaded: ${name}]*`;
   }
+  for (const [pattern, summary] of PARAPHRASED) text = text.replace(pattern, summary);
   return text
     .replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, '')
     .replace(/<(ide_selection|ide_opened_file|command-[a-z]+|local-command-[a-z]+)>[\s\S]*?<\/\1>/g, '')

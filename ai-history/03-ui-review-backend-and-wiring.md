@@ -1333,3 +1333,84 @@ The notes are restructured. Next I'll re-export the AI history so session 03 inc
 
 - `Bash` — Re-export transcripts; scan tracked files for secrets
   `$ cd "~/Desktop/Task Project" && node scripts/export-ai-history.mjs && git add -A && git status --short | head -20 && echo "--- scan of tracked files:" && git ls-`
+The scan is clean: no emails, keys or home paths in any tracked file. `Task.pdf` and `backend/.env` are git-ignored, so they stay local. I'll commit, connect the remote, and push.
+
+- `Bash` — Commit notes, add remote, inspect remote
+  `$ cd "~/Desktop/Task Project" && git commit -q -m "NOTES: approach, time spent, decisions, local setup, what's missing`
+The remote is empty, so there's nothing to merge or overwrite. Pushing `main`:
+
+- `Bash` — Push main to GitHub
+  `$ cd "~/Desktop/Task Project" && git push -u origin main 2>&1 | tail -8; echo "---"; git status -sb | head -1; git ls-remote origin | head -3`
+The push went through. I'll check that the repo is publicly visible, since that's what the brief asks for.
+
+- `Bash` — Check repo visibility via GitHub API
+  `$ curl -s -m 20 https://api.github.com/repos/isAlmogK/memora-task | python3 -c "import json,sys; d=json.load(sys.stdin); print('private:', d.get('private'), '| vi`
+The code is on GitHub at **https://github.com/isAlmogK/memora-task**. The repo is public, `main` holds all 21 commits, and your local branch now pushes there.
+
+**Before pushing** I scanned every tracked file: no emails, keys or home paths. `Task.pdf` and `backend/.env` are git-ignored, so they stayed local. One thing outside the files: your commits carry your git email (`[email]`), and GitHub shows that on public commits. If you'd rather hide it, GitHub has a "keep my email private" setting with a noreply address.
+
+**What's new in `NOTES.md`:**
+- **How I approached it:** your points, cleaned up. A few hours and fully AI-built; frontend and user experience first, with a design and mock-up you reviewed and approved before any backend; kept simple; Claude Code doing the work while you made the product and design calls.
+- **Time spent:** about 3 hours of active work across three sessions on 2–3 October. That's measured from the session logs, leaving out idle gaps over 15 minutes, because the last session ran over a break.
+- **Docker:** you didn't run it because you run several agents on your Mac and Docker slows it down. The notes give the exact steps you used instead: Homebrew Postgres 14, creating the role and databases, then `db:reset` and `start:dev`.
+- **Decisions I made along the way:** a table of all 24 decisions, every question you answered plus the calls you made in your own prompts. For example: the name "Stack", Drizzle over Kysely, the cover-glow background, the automatic Read stack, removing "Up next", the two rows of stacks.
+- **What's missing and needs improving:** preloaders, user profile, full login and sign-up, sharing, full mobile responsiveness, website and marketing pages. The open bug is worded "some animations distort the book cover images"; if you know which animation, tell me and I'll name it.
+- **What I'd do next:** Playwright and unit tests, Firebase for OAuth, a security check, and a deployment CLI with CI, followed by a real progress source.
+
+I also re-exported the AI history, so session 03 now runs through this conversation.
+
+To check before you submit:
+- **The quoted employer reply:** `ai-history/01` still quotes their answer to your questions. Keep it or cut it.
+- **Closing the transcript:** if we change anything else, run `node scripts/export-ai-history.mjs`, commit and push, so the transcript ends where the work does.
+
+---
+
+## 🧑 Prompt
+
+what do you suggest for this The quoted employer reply: ai-history/01 still quotes their answer to your questions. Keep it or cut it.
+Closing the transcript: if we change anything else, run node scripts/export-ai-history.mjs, commit and push, so the transcript ends where the work does.
+
+### 🤖 Claude
+
+**The employer's reply: paraphrase it rather than quote it or cut it.**
+
+- **Keep your two questions.** Asking about AI use and focus before starting shows good judgement, and the reviewers will see you clarified the brief first.
+- **Replace their reply with a one-line summary**, something like: *"They replied: use AI the way you would on the job; they grade the judgement around it, not hand-written vs. generated code; and the 'What we'll look for' list is in priority order."*
+  - **Why not quote it:** it's a private message from the company, now in a public repo where other applicants can read their guidance word for word.
+  - **Why not cut it:** it explains why you went fully AI-built and focused on the data model first. Without it, those choices look arbitrary.
+- **Be transparent about the edit.** The `ai-history` README should say that one private message was paraphrased, since the transcripts are supposed to be faithful. The paraphrase would live in the export script, so re-running it stays consistent.
+
+**Closing the transcript: make the export the very last commit.**
+
+1. Finish any remaining changes and commit them.
+2. Run `node scripts/export-ai-history.mjs`, then commit it as "Final AI history export" and push.
+3. Submit the link.
+
+The transcript will run up to that final export but can't include the export command itself, which is fine. If you're done changing things now, I can do this right away together with the paraphrase.
+
+Want me to do both: paraphrase the reply, note it in the `ai-history` README, re-export, commit and push?
+
+---
+
+## 🧑 Prompt
+
+yes
+
+### 🤖 Claude
+
+I'll find exactly where the employer's reply appears across all three transcripts, so the paraphrase catches every copy.
+
+- `Bash` — Locate employer reply in transcripts
+  `$ cd "~/Desktop/Task Project/ai-history" && grep -n "Their answ\|style points\|[phrase from the private reply]\|[phrase from the private reply]\|[phrase from the `
+The reply appears only in transcript 01 (the 02 hit is my own plan text, not their words). I'll check the exact block boundaries in the raw prompt.
+
+- `Bash` — Show the exact employer reply block
+  `$ cd "~/Desktop/Task Project/ai-history" && sed -n 19,29p 01-design-brainstorm.md | cut -c1-400`
+- `Bash` — Paraphrase the private reply in exporter, re-export
+  `$ cd "~/Desktop/Task Project" && python3 - <<'EOF'`
+- `Bash` — Redact reply phrases everywhere; re-export
+  `$ cd "~/Desktop/Task Project" && grep -n "[phrase from the private reply]\|[phrase from the private reply]" ai-history/03-ui-review-backend-and-wiring.md | cut -c`
+- `Bash` — Recompute total active time to now
+  `$ cd ~/.claude/projects/-~-Desktop-Task-Project/ && python3 - <<'EOF'`
+- `Bash` — Fix date/time in NOTES, final export, commit, push
+  `$ cd "~/Desktop/Task Project" && python3 - <<'EOF'`

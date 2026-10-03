@@ -18,12 +18,7 @@ this the task I have to do for a new job interview. I did ask the following ques
 
 2. Focus. Is the main goal to see hands-on backend code, or how I think about data modeling, architecture, and scale? Knowing which matters most will help me put the effort where it counts.
 
-Their answes 
-On AI: 
-Use it the way you would on the job. We are not grading hand-written versus generated code. We are grading the judgement around it, so the NOTES.md section on what you reached for it for, what you did not trust it with, and where it was wrong and how you caught it matters as much as the code. If most of the code is generated, that is fine, as long as the review is real and visible. Another thing applicants are doing is putting their AI transcript into the notes, that seems to give a fair view of everything.
-
-On focus:
-the brief's "What We'll Look For" list is in priority order. Domain model, migration, and SQL first, then the API contract, then how the two halves fit. We are not scoring scale or breadth, but beyond it, go for what appeals to you for style points.
+*[The company's reply, paraphrased: use AI the way you would on the job. They grade the judgement around it (what you used it for, what you did not trust it with, where it was wrong and how you caught it), not hand-written vs. generated code, and including the AI transcript is welcome. On focus: the brief's "What We'll Look For" list is in priority order (domain model, migration and SQL first, then the API contract, then how the two halves fit); scale and breadth are not scored, and anything beyond that is style points.]*
 
 I really hate good reads app which I use a lot its outdated, really bad UI I like the idea of doing an app for book reading and book treacking, ideally I would want to conenxt to kiddle API if there is one and use that auto track my progress for reading the app needs to be simple I search for books using Amzone API, I can create my groups (need a good name not a shlef or box but someting that is about reading x boosk, or showing poogress the idea is I should be able to orginze my boosk but also give it good name not just grops) and what I'm reading gets update if there is kinddle API, the goal is not have the user do manaul inputs but things auto for the user, easy, clean and show pogress, extt
 
