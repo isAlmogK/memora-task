@@ -17,4 +17,17 @@ export default tseslint.config(
       '@typescript-eslint/no-extraneous-class': 'off',
     },
   },
+  // HTTP response bodies are untyped by nature (supertest's res.body is any); the specs
+  // assert on their shape instead. Source code keeps the strict rules.
+  {
+    files: ['test/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+    },
+  },
+  // one-off Node scripts are plain JS outside the TS project: lint them without type info
+  { files: ['scripts/**/*.mjs'], ...tseslint.configs.disableTypeChecked },
 );

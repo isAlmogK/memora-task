@@ -19,6 +19,7 @@ import {
   numeric,
   pgEnum,
   pgTable,
+  pgView,
   primaryKey,
   text,
   timestamp,
@@ -182,3 +183,24 @@ export const stackBook = pgTable(
     index('stack_book_user_book_idx').on(t.userBookId),
   ],
 );
+
+/**
+ * Typed handle on the view created by drizzle/0001_progress_view.sql. `.existing()` tells
+ * drizzle-kit the view is managed by that hand-written migration, not by this file.
+ */
+export const userBookProgress = pgView('user_book_progress', {
+  userBookId: uuid('user_book_id').notNull(),
+  userId: uuid('user_id').notNull(),
+  bookId: uuid('book_id').notNull(),
+  addedAt: timestamp('added_at', { withTimezone: true }).notNull(),
+  finishedMarkedAt: timestamp('finished_marked_at', { withTimezone: true }),
+  abandonedAt: timestamp('abandoned_at', { withTimezone: true }),
+  percent: numeric('percent', { precision: 5, scale: 2, mode: 'number' }).notNull(),
+  page: integer('page'),
+  source: progressSource('source'),
+  progressAt: timestamp('progress_at', { withTimezone: true }),
+  status: text('status', { enum: ['want_to_read', 'reading', 'finished', 'abandoned'] }).notNull(),
+  finishedAt: timestamp('finished_at', { withTimezone: true }),
+  percentPerDay: numeric('percent_per_day', { mode: 'number' }),
+  eta: timestamp('eta', { withTimezone: true }),
+}).existing();
