@@ -39,7 +39,9 @@ export class OpenLibraryClient {
   private readonly log = new Logger(OpenLibraryClient.name);
   private readonly cache = new Map<string, { at: number; entries: CatalogEntry[] }>();
 
-  async search(query: string, limit: number): Promise<CatalogEntry[]> {
+  async search(rawQuery: string, limit: number): Promise<CatalogEntry[]> {
+    const query = toPlainQuery(rawQuery);
+    if (!query) return [];
     const cacheKey = `${limit}:${query.toLowerCase()}`;
     const hit = this.cache.get(cacheKey);
     if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.entries;
@@ -64,6 +66,9 @@ export class OpenLibraryClient {
         headers: { 'User-Agent': 'stacks-takehome/0.1 (reading tracker)' },
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
+      // 422 = "Invalid query": too short or only stopwords ("it", "the"). Typing passes
+      // through those on the way to a real query; it means no results, not an outage.
+      if (res.status === 422) return [];
       if (!res.ok) throw new Error(`Open Library answered ${res.status}`);
       body = (await res.json()) as { docs?: SearchDoc[] };
     } catch (err) {
@@ -72,6 +77,18 @@ export class OpenLibraryClient {
     }
     return (body.docs ?? []).flatMap(toEntry);
   }
+}
+
+/**
+ * Open Library's q is Solr query syntax: "-dune" means NOT dune and answers 500, a stray
+ * quote or bracket is a parse error. Users type titles, not queries, so syntax characters
+ * become spaces.
+ */
+export function toPlainQuery(input: string): string {
+  return input
+    .replace(/[+\-!(){}[\]^"~*?:\\/&|]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 /** Drops docs we couldn't store (no work key or title); keeps at most two authors. */
