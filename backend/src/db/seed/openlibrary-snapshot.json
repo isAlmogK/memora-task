@@ -1,0 +1,355 @@
+[
+  {
+    "olWorkKey": "OL21745884W",
+    "genre": "Science fiction",
+    "title": "Project Hail Mary",
+    "authors": [
+      "Andy Weir"
+    ],
+    "coverId": 11200092,
+    "pageCount": 496,
+    "firstPublishedYear": 2021
+  },
+  {
+    "olWorkKey": "OL17091839W",
+    "genre": "Science fiction",
+    "title": "The Martian",
+    "authors": [
+      "Andy Weir"
+    ],
+    "coverId": 11447888,
+    "pageCount": 407,
+    "firstPublishedYear": 2011
+  },
+  {
+    "olWorkKey": "OL893414W",
+    "genre": "Science fiction",
+    "title": "Dune",
+    "authors": [
+      "Frank Herbert"
+    ],
+    "coverId": 11481354,
+    "pageCount": 608,
+    "firstPublishedYear": 1965
+  },
+  {
+    "olWorkKey": "OL20883297W",
+    "genre": "Science fiction",
+    "title": "Klara and the Sun",
+    "authors": [
+      "Kazuo Ishiguro"
+    ],
+    "coverId": 10648686,
+    "pageCount": 334,
+    "firstPublishedYear": 2019
+  },
+  {
+    "olWorkKey": "OL20893680W",
+    "genre": "Fantasy",
+    "title": "Piranesi",
+    "authors": [
+      "Susanna Clarke"
+    ],
+    "coverId": 10226290,
+    "pageCount": 272,
+    "firstPublishedYear": 2020
+  },
+  {
+    "olWorkKey": "OL59800W",
+    "genre": "Science fiction",
+    "title": "The Left Hand of Darkness",
+    "authors": [
+      "Ursula K. Le Guin"
+    ],
+    "coverId": 10618463,
+    "pageCount": 304,
+    "firstPublishedYear": 1969
+  },
+  {
+    "olWorkKey": "OL17202418W",
+    "genre": "Science fiction",
+    "title": "Station Eleven",
+    "authors": [
+      "Emily St. John Mandel"
+    ],
+    "coverId": 7369961,
+    "pageCount": 352,
+    "firstPublishedYear": 2014
+  },
+  {
+    "olWorkKey": "OL24731706W",
+    "genre": "Science fiction",
+    "title": "Sea of Tranquility",
+    "authors": [
+      "Emily St. John Mandel"
+    ],
+    "coverId": 11465138,
+    "pageCount": 272,
+    "firstPublishedYear": 2022
+  },
+  {
+    "olWorkKey": "OL26004554W",
+    "genre": "Literary fiction",
+    "title": "Tomorrow, and Tomorrow, and Tomorrow",
+    "authors": [
+      "Gabrielle Zevin"
+    ],
+    "coverId": 12859975,
+    "pageCount": 460,
+    "firstPublishedYear": 2022
+  },
+  {
+    "olWorkKey": "OL26443093W",
+    "genre": "Fantasy",
+    "title": "Babel",
+    "authors": [
+      "R. F. Kuang"
+    ],
+    "coverId": 12468631,
+    "pageCount": 577,
+    "firstPublishedYear": 2022
+  },
+  {
+    "olWorkKey": "OL59048W",
+    "genre": "Historical fiction",
+    "title": "The Remains of the Day",
+    "authors": [
+      "Kazuo Ishiguro"
+    ],
+    "coverId": 95742,
+    "pageCount": 254,
+    "firstPublishedYear": 1989
+  },
+  {
+    "olWorkKey": "OL59038W",
+    "genre": "Science fiction",
+    "title": "Never Let Me Go",
+    "authors": [
+      "Kazuo Ishiguro"
+    ],
+    "coverId": 1047334,
+    "pageCount": 319,
+    "firstPublishedYear": 2005
+  },
+  {
+    "olWorkKey": "OL17373843W",
+    "genre": "Science fiction",
+    "title": "Children of Time",
+    "authors": [
+      "Adrian Tchaikovsky"
+    ],
+    "coverId": 8264706,
+    "pageCount": 616,
+    "firstPublishedYear": 2015
+  },
+  {
+    "olWorkKey": "OL20157046W",
+    "genre": "Science fiction",
+    "title": "A Memory Called Empire",
+    "authors": [
+      "Arkady Martine"
+    ],
+    "coverId": 8802134,
+    "pageCount": 464,
+    "firstPublishedYear": 2019
+  },
+  {
+    "olWorkKey": "OL20149336W",
+    "genre": "Short stories",
+    "title": "Exhalation",
+    "authors": [
+      "Ted Chiang"
+    ],
+    "coverId": 8793546,
+    "pageCount": 338,
+    "firstPublishedYear": 2019
+  },
+  {
+    "olWorkKey": "OL1963268W",
+    "genre": "Science fiction",
+    "title": "Hyperion",
+    "authors": [
+      "Dan Simmons"
+    ],
+    "coverId": 380332,
+    "pageCount": 481,
+    "firstPublishedYear": 1989
+  },
+  {
+    "olWorkKey": "OL35708581W",
+    "genre": "Literary fiction",
+    "title": "Orbital",
+    "authors": [
+      "Samantha Harvey"
+    ],
+    "coverId": 14541972,
+    "pageCount": 144,
+    "firstPublishedYear": 2023
+  },
+  {
+    "olWorkKey": "OL34341539W",
+    "genre": "Literary fiction",
+    "title": "Prophet Song",
+    "authors": [
+      "Paul Lynch"
+    ],
+    "coverId": 14814200,
+    "pageCount": 259,
+    "firstPublishedYear": 2023
+  },
+  {
+    "olWorkKey": "OL27052926W",
+    "genre": "Literary fiction",
+    "title": "Demon Copperhead",
+    "authors": [
+      "Barbara Kingsolver"
+    ],
+    "coverId": 13141227,
+    "pageCount": 560,
+    "firstPublishedYear": 2022
+  },
+  {
+    "olWorkKey": "OL19074847W",
+    "genre": "Literary fiction",
+    "title": "The Overstory",
+    "authors": [
+      "Richard Powers"
+    ],
+    "coverId": 8758252,
+    "pageCount": 531,
+    "firstPublishedYear": 2018
+  },
+  {
+    "olWorkKey": "OL16086747W",
+    "genre": "Fantasy",
+    "title": "The Night Circus",
+    "authors": [
+      "Erin Morgenstern"
+    ],
+    "coverId": 8773134,
+    "pageCount": 512,
+    "firstPublishedYear": 2011
+  },
+  {
+    "olWorkKey": "OL18012166W",
+    "genre": "Fantasy",
+    "title": "Circe",
+    "authors": [
+      "Madeline Miller"
+    ],
+    "coverId": 8739376,
+    "pageCount": 404,
+    "firstPublishedYear": 2018
+  },
+  {
+    "olWorkKey": "OL18139176W",
+    "genre": "Memoir",
+    "title": "Educated",
+    "authors": [
+      "Tara Westover",
+      "Orah Danḳner"
+    ],
+    "coverId": 8314077,
+    "pageCount": 384,
+    "firstPublishedYear": 2018
+  },
+  {
+    "olWorkKey": "OL17075811W",
+    "genre": "Nonfiction",
+    "title": "Sapiens",
+    "authors": [
+      "Yuval Noah Harari"
+    ],
+    "coverId": 8634250,
+    "pageCount": 456,
+    "firstPublishedYear": 2011
+  },
+  {
+    "olWorkKey": "OL20878311W",
+    "genre": "Mystery & thriller",
+    "title": "The Thursday Murder Club",
+    "authors": [
+      "Richard Osman"
+    ],
+    "coverId": 10201431,
+    "pageCount": 449,
+    "firstPublishedYear": 2020
+  },
+  {
+    "olWorkKey": "OL16239762W",
+    "genre": "Mystery & thriller",
+    "title": "Gone Girl",
+    "authors": [
+      "Gillian Flynn"
+    ],
+    "coverId": 8368314,
+    "pageCount": 475,
+    "firstPublishedYear": 2011
+  },
+  {
+    "olWorkKey": "OL20073906W",
+    "genre": "Mystery & thriller",
+    "title": "Recursion",
+    "authors": [
+      "Blake Crouch"
+    ],
+    "coverId": 8748478,
+    "pageCount": 352,
+    "firstPublishedYear": 2019
+  },
+  {
+    "olWorkKey": "OL20965973W",
+    "genre": "Literary fiction",
+    "title": "The Midnight Library",
+    "authors": [
+      "Matt Haig"
+    ],
+    "coverId": 10313767,
+    "pageCount": 304,
+    "firstPublishedYear": 2020
+  },
+  {
+    "olWorkKey": "OL25344431W",
+    "genre": "Literary fiction",
+    "title": "Lessons in Chemistry",
+    "authors": [
+      "Bonnie Garmus"
+    ],
+    "coverId": 12725772,
+    "pageCount": 464,
+    "firstPublishedYear": 2022
+  },
+  {
+    "olWorkKey": "OL16509148W",
+    "genre": "Fantasy",
+    "title": "The Song of Achilles",
+    "authors": [
+      "Madeline Miller"
+    ],
+    "coverId": 7098465,
+    "pageCount": 386,
+    "firstPublishedYear": 2011
+  },
+  {
+    "olWorkKey": "OL17358795W",
+    "genre": "Mystery & thriller",
+    "title": "Dark Matter",
+    "authors": [
+      "Blake Crouch"
+    ],
+    "coverId": 7436634,
+    "pageCount": 366,
+    "firstPublishedYear": 2016
+  },
+  {
+    "olWorkKey": "OL17824318W",
+    "genre": "Memoir",
+    "title": "Born a Crime",
+    "authors": [
+      "Trevor Noah"
+    ],
+    "coverId": 8294078,
+    "pageCount": 304,
+    "firstPublishedYear": 2016
+  }
+]
