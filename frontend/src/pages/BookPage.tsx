@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { ApiError } from '../api/errors';
-import { useLibraryBook, useStackMembership, useStacks, useUpdateLibraryBook } from '../api/queries';
+import { useLibraryBook, useRemoveFromLibrary, useStackMembership, useStacks, useUpdateLibraryBook } from '../api/queries';
 import type { LibraryBookDetailDto, ReadingEventDto } from '../api/types';
 import { CountUp } from '../components/CountUp';
 import { Cover } from '../components/Cover';
@@ -140,8 +140,45 @@ function StatusActions({ item }: { item: LibraryBookDetailDto }) {
           Pick it back up
         </button>
       )}
+      <RemoveFromLibrary item={item} />
       {update.isError && <ErrorState error={update.error} compact />}
     </div>
+  );
+}
+
+/** Two-step, because it also deletes the reading history and stack memberships. */
+function RemoveFromLibrary({ item }: { item: LibraryBookDetailDto }) {
+  const remove = useRemoveFromLibrary();
+  const navigate = useNavigate();
+  const [confirming, setConfirming] = useState(false);
+
+  if (!confirming) {
+    return (
+      <button
+        onClick={() => setConfirming(true)}
+        className="rounded-full px-3 py-1.5 text-sm text-muted hover:bg-danger/10 hover:text-danger"
+      >
+        Remove from library
+      </button>
+    );
+  }
+  return (
+    <motion.div initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} className="flex flex-wrap items-center gap-2 text-sm">
+      <span className="text-muted">
+        Remove “{item.book.title}”? Its reading history{item.stacks.length > 0 && ' and stack memberships'} go too.
+      </span>
+      <button
+        onClick={() => remove.mutate(item.id, { onSuccess: () => navigate('/library', { replace: true }) })}
+        disabled={remove.isPending}
+        className="rounded-full bg-danger px-3 py-1.5 text-paper disabled:opacity-60"
+      >
+        {remove.isPending ? 'Removing…' : 'Remove'}
+      </button>
+      <button onClick={() => setConfirming(false)} className="px-2 py-1.5 text-muted hover:text-ink">
+        Cancel
+      </button>
+      {remove.isError && <ErrorState error={remove.error} compact />}
+    </motion.div>
   );
 }
 

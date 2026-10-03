@@ -83,7 +83,7 @@ export function AutoStackCard({ kind, className }: { kind: AutoStackKind; classN
             <span className="rounded-full bg-paper/15 px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-paper/80">Auto</span>
           </div>
           <p className="mt-0.5 text-sm text-paper/60">{cfg.blurb}</p>
-          <p className="mt-3 text-sm text-paper/70">{kind === 'read' ? <ReadLine /> : <CountLine books={books} kind={kind} />}</p>
+          <p className="mt-3 text-sm text-paper/70">{kind === 'read' ? <ReadLine finished={books.length} /> : <CountLine books={books} kind={kind} />}</p>
           <p className="mt-4 text-xs font-medium text-paper/90">{cfg.cta}</p>
         </div>
       </Link>
@@ -118,8 +118,19 @@ function CountLine({ books, kind }: { books: LibraryBookDto[]; kind: AutoStackKi
   );
 }
 
-function ReadLine() {
+function ReadLine({ finished }: { finished: number }) {
   const stats = useStats();
+  // Without stats (still loading, or the endpoint failed) say only what we know for sure.
+  if (!stats.data) {
+    return (
+      <>
+        <Num>
+          <CountUp value={finished} />
+        </Num>{' '}
+        {finished === 1 ? 'book' : 'books'} finished
+      </>
+    );
+  }
   return (
     <>
       <Num>

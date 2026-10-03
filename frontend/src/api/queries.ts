@@ -97,6 +97,18 @@ export function useUpdateLibraryBook(id: string) {
   });
 }
 
+export function useRemoveFromLibrary() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.removeFromLibrary(id),
+    onSuccess: (_, id) => {
+      qc.removeQueries({ queryKey: qk.libraryBook(id) });
+      // not awaited, for the same reason as useDeleteStack
+      void Promise.all([invalidateReadingData(qc), qc.invalidateQueries({ queryKey: ['catalog'] })]);
+    },
+  });
+}
+
 // ---------- catalog ----------
 
 export function useCatalogSearch(q: string) {
@@ -142,7 +154,9 @@ export function useDeleteStack() {
     mutationFn: (id: string) => api.deleteStack(id),
     onSuccess: (_, id) => {
       qc.removeQueries({ queryKey: qk.stack(id) });
-      return invalidateReadingData(qc);
+      // Don't await: the caller navigates away now, instead of after a refetch of the
+      // page it's leaving (which would 404 and flash "not found").
+      void invalidateReadingData(qc);
     },
   });
 }

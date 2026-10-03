@@ -1,6 +1,8 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  /** "mock" (default): in-browser mock API. "http": the real Nest API via the /v1 proxy. */
-  readonly VITE_API_MODE?: 'mock' | 'http';
+  /** Unset: the real API via the /v1 proxy. "mock": the in-browser mock (npm run dev:mock). */
+  readonly VITE_API_MODE?: 'mock';
+  /** API key for the real API; defaults to the seeded dev user (dev-alice-user-key). */
+  readonly VITE_API_KEY?: string;
 }

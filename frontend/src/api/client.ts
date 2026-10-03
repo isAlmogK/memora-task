@@ -1,4 +1,5 @@
 export { ApiError } from './errors';
+import { httpApi } from './http';
 import { mockApi } from './mock/server';
 import type {
   AddToLibraryBody,
@@ -25,6 +26,7 @@ export interface StacksApi {
   addToLibrary(body: AddToLibraryBody): Promise<LibraryBookDto>;
   logProgress(id: string, body: LogProgressBody): Promise<LibraryBookDetailDto>;
   updateLibraryBook(id: string, body: UpdateLibraryBookBody): Promise<LibraryBookDto>;
+  removeFromLibrary(id: string): Promise<void>;
 
   listStacks(): Promise<StackSummaryDto[]>;
   getStack(id: string): Promise<StackDetailDto>;
@@ -41,4 +43,10 @@ export interface StacksApi {
   listSyncRuns(limit: number): Promise<SyncRunDto[]>;
 }
 
-export const api: StacksApi = mockApi;
+/**
+ * `npm run dev` talks to the real API; `npm run dev:mock` runs on the in-browser mock (no
+ * backend needed, plus slow/error/empty modes for reviewing UI states). Both implement
+ * this interface, so nothing above this file knows which one it's using.
+ */
+export const isMock = import.meta.env.VITE_API_MODE === 'mock';
+export const api: StacksApi = isMock ? mockApi : httpApi;

@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useEffect } from 'react';
 import { NavLink, useLocation, useOutlet } from 'react-router';
 import { AmbientBackground } from '../components/AmbientBackground';
+import { isMock } from '../api/client';
 import { usePrefetchOnIntent } from '../api/queries';
 import { MockPanel } from '../components/MockPanel';
 import { SearchButton, SearchProvider } from '../components/SearchOverlay';
@@ -58,7 +59,7 @@ export function Layout() {
         </AnimatePresence>
       </main>
 
-      {import.meta.env.VITE_API_MODE !== 'http' && <MockPanel />}
+      {isMock && <MockPanel />}
     </div>
     </SearchProvider>
   );

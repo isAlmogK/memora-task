@@ -23,7 +23,11 @@ export function QueryState<T>({ query, loading, empty, isEmpty, children }: Quer
 }
 
 function errorMessage(error: unknown): string {
-  if (error instanceof ApiError) return error.message;
+  if (error instanceof ApiError) {
+    // a field-level validation message says more than "Request is invalid"
+    const first = error.details && typeof error.details === 'object' ? Object.entries(error.details as Record<string, string>)[0] : undefined;
+    return first ? `${first[0]} ${first[1]}` : error.message;
+  }
   return 'Something went wrong. Check your connection and try again.';
 }
 

@@ -276,15 +276,17 @@ export const mockApi: StacksApi = {
       const book = findBook(s, lb.olWorkKey);
       let percent: number;
       let page: number | null = null;
-      if ('page' in body) {
-        if (!book.pageCount) throw new ApiError(400, 'page_unsupported', 'This edition has no page count; log a percent instead');
+      if (body.page !== undefined) {
+        if (!book.pageCount) throw new ApiError(400, 'page_unsupported', 'This book has no page count; log a percent instead');
         if (!Number.isInteger(body.page) || body.page < 0 || body.page > book.pageCount) {
-          throw new ApiError(400, 'validation_failed', `page must be between 0 and ${book.pageCount}`);
+          throw new ApiError(400, 'validation_failed', 'Request is invalid', { page: `must be between 0 and ${book.pageCount}` });
         }
         page = body.page;
         percent = round2((body.page / book.pageCount) * 100);
       } else {
-        if (!(body.percent >= 0 && body.percent <= 100)) throw new ApiError(400, 'validation_failed', 'percent must be between 0 and 100');
+        if (!(body.percent >= 0 && body.percent <= 100)) {
+          throw new ApiError(400, 'validation_failed', 'Request is invalid', { percent: 'must be between 0 and 100' });
+        }
         percent = round2(body.percent);
         page = book.pageCount ? Math.round((percent / 100) * book.pageCount) : null;
       }
@@ -300,6 +302,15 @@ export const mockApi: StacksApi = {
       if (body.finished !== undefined) lb.finishedAt = body.finished ? Date.now() : null;
       if (body.abandoned !== undefined) lb.abandonedAt = body.abandoned ? Date.now() : null;
       return libraryBookDto(s, lb);
+    }),
+
+  removeFromLibrary: (id) =>
+    respond(() => {
+      const s = db();
+      findLibraryBook(s, id);
+      s.library = s.library.filter((lb) => lb.id !== id);
+      s.events = s.events.filter((e) => e.libraryBookId !== id);
+      s.stacks.forEach((st) => (st.bookIds = st.bookIds.filter((b) => b !== id)));
     }),
 
   listStacks: () =>

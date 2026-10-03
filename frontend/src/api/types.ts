@@ -1,97 +1,44 @@
 /**
- * Response/request shapes of the Stacks API (v1).
+ * Shapes of the Stacks API (v1).
  *
- * TEMPORARY: hand-written while the UI runs on mock data. Once the backend emits
- * openapi.json these become aliases of the generated `components['schemas']`
- * types, and nothing outside src/api/ should need to change.
+ * Everything the backend already serves is an alias of the types generated from its
+ * OpenAPI spec (schema.d.ts, via `npm run gen:api`), so a contract change on the server
+ * shows up here as a compile error, not a runtime surprise. The mock implements the
+ * same types.
  */
+import type { components } from './schema';
 
-export type ReadingStatus = 'want_to_read' | 'reading' | 'finished' | 'abandoned';
-export type ProgressSource = 'manual' | 'device' | 'kindle_sim';
+type Schemas = components['schemas'];
+
+export type BookDto = Schemas['BookDto'];
+export type CatalogBookDto = Schemas['CatalogBookDto'];
+export type ProgressDto = Schemas['ProgressDto'];
+export type PaceDto = Schemas['PaceDto'];
+export type LibraryBookDto = Schemas['LibraryBookDto'];
+export type LibraryBookDetailDto = Schemas['LibraryBookDetailDto'];
+export type ReadingEventDto = Schemas['ReadingEventDto'];
+export type StackRefDto = Schemas['StackRefDto'];
+export type StackSummaryDto = Schemas['StackSummaryDto'];
+export type StackDetailDto = Schemas['StackDetailDto'];
+export type ApiErrorBody = Schemas['ApiErrorBody'];
+
+export type ReadingStatus = LibraryBookDto['status'];
+export type ProgressSource = ReadingEventDto['source'];
+export type LibraryStatusFilter = ReadingStatus | undefined;
+
+// ---------- request bodies ----------
+export type AddToLibraryBody = Schemas['AddToLibraryBody'];
+/** The API takes exactly one of the two; the union says so at compile time too. */
+export type LogProgressBody = { percent: number; page?: never } | { page: number; percent?: never };
+export type UpdateLibraryBookBody = Schemas['UpdateLibraryBookBody'];
+export type CreateStackBody = Schemas['CreateStackBody'];
+export type UpdateStackBody = Schemas['UpdateStackBody'];
+
+// ---------- not served by the backend yet ----------
+// TEMPORARY: hand-written until GET /v1/stats and /v1/sync-runs exist; the mock serves
+// them meanwhile. Then these become aliases like the ones above.
+
 export type SyncStatus = 'queued' | 'running' | 'succeeded' | 'failed';
-
-export interface BookDto {
-  olWorkKey: string;
-  title: string;
-  authors: string[];
-  coverUrl: string | null;
-  pageCount: number | null;
-  firstPublishedYear: number | null;
-  /** One primary genre, mapped from Open Library subjects when the book enters the catalog. */
-  genre: string | null;
-}
-
-export interface CatalogBookDto extends BookDto {
-  /** Set when the caller already has this book in their library. */
-  libraryBookId: string | null;
-}
-
-export interface ProgressDto {
-  /** Canonical unit: e-readers report percent, not pages. 0 when nothing logged yet. */
-  percent: number;
-  page: number | null;
-  source: ProgressSource | null;
-  occurredAt: string | null;
-}
-
-export interface PaceDto {
-  /** Percent gained over the trailing 14 days ÷ 14. Null when not reading. */
-  percentPerDay: number | null;
-  pagesPerDay: number | null;
-  /** Projected finish date (ISO). Null when pace is zero/unknown. */
-  eta: string | null;
-}
-
-export interface LibraryBookDto {
-  id: string;
-  book: BookDto;
-  status: ReadingStatus;
-  addedAt: string;
-  finishedAt: string | null;
-  progress: ProgressDto;
-  pace: PaceDto;
-}
-
-export interface ReadingEventDto {
-  id: string;
-  percent: number;
-  page: number | null;
-  source: ProgressSource;
-  occurredAt: string;
-  receivedAt: string;
-}
-
-export interface StackRefDto {
-  id: string;
-  name: string;
-}
-
-export interface LibraryBookDetailDto extends LibraryBookDto {
-  /** Newest first, max 50. */
-  events: ReadingEventDto[];
-  stacks: StackRefDto[];
-}
-
-export interface StackSummaryDto {
-  id: string;
-  name: string;
-  description: string | null;
-  targetCount: number | null;
-  dueOn: string | null;
-  createdAt: string;
-  bookCount: number;
-  finishedCount: number;
-  /** coalesce(targetCount, bookCount) */
-  goal: number;
-  /** null when there is no due date; otherwise finished/goal ≥ elapsed fraction of the window. */
-  onTrack: boolean | null;
-  /** First few books, in stack order, for the spine preview. */
-  preview: { libraryBookId: string; title: string; coverUrl: string | null; pageCount: number | null; status: ReadingStatus }[];
-}
-
-export interface StackDetailDto extends StackSummaryDto {
-  books: LibraryBookDto[];
-}
 
 export interface SyncRunDto {
   id: string;
@@ -104,11 +51,6 @@ export interface SyncRunDto {
   finishedAt: string | null;
 }
 
-/**
- * `GET /v1/stats`: everything on the "Read" page, computed from reading events in one
- * query. Days are UTC calendar days. "Pages read" counts new ground only: a page you
- * re-read after jumping back is not counted twice.
- */
 export interface ReadingStatsDto {
   year: number;
   booksFinished: { thisYear: number; allTime: number };
@@ -130,25 +72,3 @@ export interface ReadingStatsDto {
   fastestFinish: { libraryBookId: string; title: string; days: number } | null;
 }
 
-/** Uniform error body: `{ error: { code, message, details? } }`. */
-export interface ApiErrorBody {
-  error: { code: string; message: string; details?: unknown };
-}
-
-// ---- request bodies ----
-export interface AddToLibraryBody {
-  olWorkKey: string;
-}
-export type LogProgressBody = { percent: number } | { page: number };
-export interface UpdateLibraryBookBody {
-  finished?: boolean;
-  abandoned?: boolean;
-}
-export interface CreateStackBody {
-  name: string;
-  description?: string | null;
-  targetCount?: number | null;
-  dueOn?: string | null;
-}
-export type UpdateStackBody = Partial<CreateStackBody>;
-export type LibraryStatusFilter = ReadingStatus | undefined;
