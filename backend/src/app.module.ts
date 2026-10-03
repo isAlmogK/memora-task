@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ApiKeyGuard } from './auth/api-key.guard';
+import { CatalogController } from './catalog/catalog.controller';
 import { CatalogService } from './catalog/catalog.service';
+import { OpenLibraryClient } from './catalog/open-library.client';
 import { DbModule } from './db/db.module';
 import { HealthController } from './health/health.controller';
 import { LibraryController } from './library/library.controller';
@@ -13,11 +15,12 @@ import { StacksService } from './stacks/stacks.service';
 
 @Module({
   imports: [DbModule],
-  controllers: [HealthController, LibraryController, StacksController, ProgressController],
+  controllers: [HealthController, CatalogController, LibraryController, StacksController, ProgressController],
   providers: [
     // Every route requires an API key unless it's marked @Public().
     { provide: APP_GUARD, useClass: ApiKeyGuard },
     CatalogService,
+    OpenLibraryClient,
     LibraryService,
     ProgressService,
     StacksService,

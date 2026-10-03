@@ -28,6 +28,4 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-return': 'off',
     },
   },
-  // one-off Node scripts are plain JS outside the TS project: lint them without type info
-  { files: ['scripts/**/*.mjs'], ...tseslint.configs.disableTypeChecked },
 );

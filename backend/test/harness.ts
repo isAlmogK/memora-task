@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
+import { Test, TestingModuleBuilder } from '@nestjs/testing';
 import { sql } from 'drizzle-orm';
 import request from 'supertest';
 import type { App } from 'supertest/types';
@@ -23,8 +23,10 @@ export interface Harness {
 }
 
 /** The real AppModule + the same pipes/filters as main.ts, against the test database. */
-export async function createHarness(): Promise<Harness> {
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+export async function createHarness(
+  override: (builder: TestingModuleBuilder) => TestingModuleBuilder = (b) => b,
+): Promise<Harness> {
+  const moduleRef = await override(Test.createTestingModule({ imports: [AppModule] })).compile();
   const app = configureApp(moduleRef.createNestApplication<INestApplication<App>>());
   await app.init();
   return { app, db: app.get<Db>(DB), close: () => app.close() };

@@ -1,9 +1,11 @@
 // One-off: pulls metadata for the seed books from Open Library into a committed JSON
 // snapshot, so `npm run db:seed` (and the frontend mock) never need the network.
-//   node scripts/fetch-catalog-snapshot.mjs
+//   npx tsx scripts/fetch-catalog-snapshot.ts
 import { writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { genreOf } from '../src/catalog/genre';
 
-const BOOKS = [
+const BOOKS: [title: string, author: string][] = [
   ['Project Hail Mary', 'Andy Weir'],
   ['The Martian', 'Andy Weir'],
   ['Dune', 'Frank Herbert'],
@@ -41,7 +43,7 @@ const BOOKS = [
 // Open Library data is community-edited and edition-merged; these are the
 // corrections found by eyeballing the first run (translators listed as authors,
 // first_publish_year taken from an unrelated edition, etc.).
-const OVERRIDES = {
+const OVERRIDES: Record<string, Partial<{ authors: string[]; firstPublishedYear: number; genre: string }>> = {
   Babel: { authors: ['R. F. Kuang'] },
   'Sea of Tranquility': { firstPublishedYear: 2022 },
   Exhalation: { firstPublishedYear: 2019 },
@@ -50,50 +52,45 @@ const OVERRIDES = {
   'The Martian': { genre: 'Science fiction' },
   'The Midnight Library': { genre: 'Literary fiction' },
 };
-/**
- * One primary genre per book, mapped from Open Library's free-form subjects. First
- * matching rule wins; anything still wrong is pinned in OVERRIDES below.
- */
-const GENRE_RULES = [
-  ['Short stories', /short stories/i],
-  ['Memoir', /biography|memoir|autobiography/i],
-  ['Mystery & thriller', /detective|mystery|thriller|suspense|crime/i],
-  ['Science fiction', /science fiction|space|dystopia|time travel/i],
-  ['Fantasy', /fantasy|magic|mythology/i],
-  ['Historical fiction', /historical fiction/i],
-  ['Nonfiction', /^(?!.*fiction).*(history|science|psychology|anthropology|civilization)/i],
-];
-const genreOf = (subjects) => {
-  for (const [genre, re] of GENRE_RULES) if (subjects.some((s) => re.test(s))) return genre;
-  return 'Literary fiction';
-};
-
 const FIELDS = 'key,title,author_name,cover_i,number_of_pages_median,first_publish_year';
-const OUT = new URL('../src/db/seed/openlibrary-snapshot.json', import.meta.url);
-
-const books = [];
-for (const [title, author] of BOOKS) {
-  const params = new URLSearchParams({ title, author, fields: FIELDS, limit: '1' });
-  const res = await fetch(`https://openlibrary.org/search.json?${params}`, {
-    headers: { 'User-Agent': 'stacks-takehome/0.1 (seed snapshot)' },
-  });
-  const doc = (await res.json()).docs?.[0];
-  if (!doc) {
-    console.warn(`no match: ${title}`);
-    continue;
-  }
-  const work = await (await fetch(`https://openlibrary.org${doc.key}.json`)).json();
-  books.push({
-    olWorkKey: doc.key.split('/').pop(),
-    genre: genreOf(work.subjects ?? []),
-    title: doc.title,
-    authors: [...new Set(doc.author_name ?? [author])].slice(0, 2),
-    coverId: doc.cover_i ?? null,
-    pageCount: doc.number_of_pages_median ?? null,
-    firstPublishedYear: doc.first_publish_year ?? null,
-    ...OVERRIDES[title],
-  });
-  console.log(books.at(-1).title, '→', books.at(-1).genre, '|', (work.subjects ?? []).slice(0, 8).join('; '));
+interface Doc {
+  key: string;
+  title: string;
+  author_name?: string[];
+  cover_i?: number;
+  number_of_pages_median?: number;
+  first_publish_year?: number;
 }
-await writeFile(OUT, JSON.stringify(books, null, 2) + '\n');
-console.log(`wrote ${books.length} books`);
+
+const OUT = resolve(__dirname, '../src/db/seed/openlibrary-snapshot.json');
+
+async function main() {
+  const books: object[] = [];
+  for (const [title, author] of BOOKS) {
+    const params = new URLSearchParams({ title, author, fields: FIELDS, limit: '1' });
+    const res = await fetch(`https://openlibrary.org/search.json?${params.toString()}`, {
+      headers: { 'User-Agent': 'stacks-takehome/0.1 (seed snapshot)' },
+    });
+    const doc = ((await res.json()) as { docs?: Doc[] }).docs?.[0];
+    if (!doc) {
+      console.warn(`no match: ${title}`);
+      continue;
+    }
+    const work = (await (await fetch(`https://openlibrary.org${doc.key}.json`)).json()) as { subjects?: string[] };
+    books.push({
+      olWorkKey: doc.key.split('/').pop(),
+      genre: genreOf(work.subjects ?? []),
+      title: doc.title,
+      authors: [...new Set(doc.author_name ?? [author])].slice(0, 2),
+      coverId: doc.cover_i ?? null,
+      pageCount: doc.number_of_pages_median ?? null,
+      firstPublishedYear: doc.first_publish_year ?? null,
+      ...(OVERRIDES[title] ?? {}),
+    });
+    console.log(doc.title, '→', (books.at(-1) as { genre: string }).genre);
+  }
+  await writeFile(OUT, JSON.stringify(books, null, 2) + '\n');
+  console.log(`wrote ${books.length} books`);
+}
+
+void main();
