@@ -1,0 +1,73 @@
+@import 'tailwindcss';
+
+/*
+ * Neutral base; colour comes from the covers (and the ambient glow sampled from them).
+ * Amber is reserved for progress.
+ */
+@theme {
+  --color-paper: #f3f3f1;
+  --color-paper-deep: #e7e6e3;
+  --color-ink: #131316;
+  --color-muted: #66666e;
+  --color-faint: #a9a9b1;
+  --color-accent: #f0a12f;
+  --color-accent-deep: #b06a09;
+  --color-danger: #c2412d;
+  --font-display: 'Bricolage Grotesque Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--color-accent) 35%, transparent);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+}
+
+/* Headline voice: tight, heavy grotesk. Lower layer than utilities, so `font-medium` etc. still win. */
+@layer components {
+  .font-display {
+    font-weight: 650;
+    letter-spacing: -0.035em;
+    font-optical-sizing: auto;
+  }
+}
+
+/*
+ * Translucent panel over the ambient glow. Deliberately no backdrop-filter: behind the
+ * panels there's only soft gradient, where a blur is invisible but costs a re-blur on
+ * every frame anything moves (measured). The header and search overlay, which sit over
+ * covers, keep their real blur.
+ */
+@utility glass {
+  background: rgb(255 255 255 / 0.6);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.65),
+    0 12px 32px -16px rgb(0 0 0 / 0.18);
+}
+
+/*
+ * Ambient glow blob: a radial gradient, not a CSS blur filter (blurring a half-screen
+ * layer is expensive to raster). Registering --blob as a <color> lets CSS transition it,
+ * so a palette change is a GPU-cheap cross-fade.
+ */
+@property --blob {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: transparent;
+}
+.blob {
+  background: radial-gradient(closest-side, var(--blob), transparent);
+  transition: --blob 1.8s ease-in-out;
+}
+
