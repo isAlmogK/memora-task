@@ -20,6 +20,7 @@ export type ReadingEventDto = Schemas['ReadingEventDto'];
 export type StackRefDto = Schemas['StackRefDto'];
 export type StackSummaryDto = Schemas['StackSummaryDto'];
 export type StackDetailDto = Schemas['StackDetailDto'];
+export type MoveResultDto = Schemas['MoveResultDto'];
 export type ApiErrorBody = Schemas['ApiErrorBody'];
 
 export type ReadingStatus = LibraryBookDto['status'];

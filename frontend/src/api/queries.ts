@@ -8,6 +8,7 @@ import type {
   LibraryBookDto,
   LibraryStatusFilter,
   LogProgressBody,
+  StackDetailDto,
   SyncRunDto,
   UpdateLibraryBookBody,
   UpdateStackBody,
@@ -168,6 +169,50 @@ export function useStackMembership() {
       member ? api.addToStack(stackId, libraryBookId) : api.removeFromStack(stackId, libraryBookId),
     onSuccess: (stack) => {
       qc.setQueryData(qk.stack(stack.id), stack);
+      return invalidateReadingData(qc);
+    },
+  });
+}
+
+/**
+ * Reorder shows the new order immediately (dragging should feel instant) and rolls back
+ * if the server refuses it, e.g. because another tab changed the stack meanwhile.
+ */
+export function useReorderStack(stackId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (libraryBookIds: string[]) => api.reorderStack(stackId, libraryBookIds),
+    onMutate: async (libraryBookIds) => {
+      await qc.cancelQueries({ queryKey: qk.stack(stackId) });
+      const previous = qc.getQueryData<StackDetailDto>(qk.stack(stackId));
+      if (previous) {
+        const byId = new Map(previous.books.map((b) => [b.id, b]));
+        qc.setQueryData<StackDetailDto>(qk.stack(stackId), {
+          ...previous,
+          books: libraryBookIds.flatMap((id) => (byId.has(id) ? [byId.get(id)!] : [])),
+        });
+      }
+      return { previous };
+    },
+    onError: (_err, _ids, ctx) => {
+      if (ctx?.previous) qc.setQueryData(qk.stack(stackId), ctx.previous);
+    },
+    onSuccess: (stack) => {
+      qc.setQueryData(qk.stack(stackId), stack);
+      // the fan previews on the stack lists follow the order
+      void qc.invalidateQueries({ queryKey: qk.stacks, exact: true });
+    },
+  });
+}
+
+export function useMoveStackBook() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ from, libraryBookId, to }: { from: string; libraryBookId: string; to: string }) =>
+      api.moveStackBook(from, libraryBookId, to),
+    onSuccess: (result) => {
+      qc.setQueryData(qk.stack(result.from.id), result.from);
+      qc.setQueryData(qk.stack(result.to.id), result.to);
       return invalidateReadingData(qc);
     },
   });

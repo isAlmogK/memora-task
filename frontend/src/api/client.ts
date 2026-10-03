@@ -10,6 +10,7 @@ import type {
   LibraryStatusFilter,
   ReadingStatsDto,
   LogProgressBody,
+  MoveResultDto,
   StackDetailDto,
   StackSummaryDto,
   SyncRunDto,
@@ -35,6 +36,9 @@ export interface StacksApi {
   deleteStack(id: string): Promise<void>;
   addToStack(stackId: string, libraryBookId: string): Promise<StackDetailDto>;
   removeFromStack(stackId: string, libraryBookId: string): Promise<StackDetailDto>;
+  /** The complete new order: every book in the stack, exactly once. */
+  reorderStack(stackId: string, libraryBookIds: string[]): Promise<StackDetailDto>;
+  moveStackBook(fromStackId: string, libraryBookId: string, toStackId: string): Promise<MoveResultDto>;
 
   getStats(): Promise<ReadingStatsDto>;
 

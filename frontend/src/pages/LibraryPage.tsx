@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Link, useSearchParams } from 'react-router';
 import { useLibrary } from '../api/queries';
 import type { LibraryBookDto, LibraryStatusFilter } from '../api/types';
+import { BookActionsMenu } from '../components/BookActionsMenu';
 import { Cover } from '../components/Cover';
 import { ProgressBar } from '../components/ProgressBar';
 import { CoverSkeleton, EmptyState, QueryState, Skeleton } from '../components/QueryState';
@@ -82,6 +83,8 @@ export function LibraryPage() {
                 <motion.li
                   key={b.id}
                   layout
+                  // tiles are transformed (own stacking context): lift the one whose menu is open
+                  className="relative hover:z-20 focus-within:z-20"
                   initial={{ opacity: 0, scale: 0.9, y: 12 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.9 }}
@@ -100,17 +103,20 @@ export function LibraryPage() {
 
 function LibraryTile({ item }: { item: LibraryBookDto }) {
   return (
-    <Link {...bookLink(item.id, 'grid')} className="group block">
-      <motion.div whileHover={{ y: -6 }} transition={spring.bouncy}>
-        <Cover book={item.book} size="md" layoutId={coverLayoutId('grid', item.id)} className="w-full!" />
-      </motion.div>
-      <p className="mt-3 line-clamp-2 text-sm font-medium leading-snug">{item.book.title}</p>
-      {item.status === 'reading' ? (
-        <ProgressBar value={item.progress.percent} label={`${item.book.title} progress`} className="mt-2" />
-      ) : (
-        <StatusLabel status={item.status} className="mt-1.5 text-[0.65rem]!" />
-      )}
-    </Link>
+    <div className="group relative">
+      <Link {...bookLink(item.id, 'grid')} className="block">
+        <motion.div whileHover={{ y: -6 }} transition={spring.bouncy}>
+          <Cover book={item.book} size="md" layoutId={coverLayoutId('grid', item.id)} className="w-full!" />
+        </motion.div>
+        <p className="mt-3 line-clamp-2 text-sm font-medium leading-snug">{item.book.title}</p>
+        {item.status === 'reading' ? (
+          <ProgressBar value={item.progress.percent} label={`${item.book.title} progress`} className="mt-2" />
+        ) : (
+          <StatusLabel status={item.status} className="mt-1.5 text-[0.65rem]!" />
+        )}
+      </Link>
+      <BookActionsMenu item={item} />
+    </div>
   );
 }
 

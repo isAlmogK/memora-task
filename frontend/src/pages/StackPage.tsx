@@ -1,8 +1,17 @@
-import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
-import { useState } from 'react';
+import { AnimatePresence, LayoutGroup, motion, Reorder } from 'motion/react';
+import { useCallback, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { ApiError } from '../api/errors';
-import { useDeleteStack, useLibrary, useStack, useStackMembership, useUpdateStack } from '../api/queries';
+import {
+  useDeleteStack,
+  useLibrary,
+  useMoveStackBook,
+  useReorderStack,
+  useStack,
+  useStackMembership,
+  useStacks,
+  useUpdateStack,
+} from '../api/queries';
 import type { LibraryBookDto, ReadingStatus, StackDetailDto } from '../api/types';
 import { Confetti } from '../components/Confetti';
 import { Cover } from '../components/Cover';
@@ -16,8 +25,11 @@ import { SearchButton } from '../components/SearchOverlay';
 import { useCompletionBurst } from '../components/useCompletionBurst';
 import { useAmbientFrom } from '../components/ambient';
 import { CountUp } from '../components/CountUp';
-import { ArrowIcon, CloseIcon, PlusIcon } from '../components/icons';
+import { ArrowIcon, CheckIcon, ChevronIcon, CloseIcon, GripIcon, MoreIcon, PlusIcon } from '../components/icons';
+import { MenuItem, MenuLabel, Popover } from '../components/Popover';
+import { StatusLabel } from '../components/StatusLabel';
 import { bookLink, coverLayoutId } from '../lib/coverMorph';
+import { cx } from '../lib/cx';
 import { authorsLine, formatDate, formatPercent } from '../lib/format';
 import { spring } from '../motion/presets';
 import { NotFoundPage } from './NotFoundPage';
@@ -152,7 +164,7 @@ const GROUPS: { status: ReadingStatus; title: string }[] = [
  * sync finishes a book it visibly moves from "Reading now" to "Done".
  */
 function StackBoard({ stack }: { stack: StackDetailDto }) {
-  const membership = useStackMembership();
+  const [arranging, setArranging] = useState(false);
 
   if (stack.books.length === 0) {
     return (
@@ -162,6 +174,47 @@ function StackBoard({ stack }: { stack: StackDetailDto }) {
       </div>
     );
   }
+  return (
+    <div>
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <p className="text-sm text-muted">
+          {arranging ? 'Drag books into the order you want; it saves as you go.' : `${stack.bookCount} ${stack.bookCount === 1 ? 'book' : 'books'}`}
+        </p>
+        {stack.books.length > 1 && (
+          <button
+            onClick={() => setArranging((a) => !a)}
+            aria-pressed={arranging}
+            className={cx(
+              'inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm transition-colors',
+              arranging ? 'bg-ink text-paper' : 'glass hover:bg-white/80',
+            )}
+          >
+            {arranging ? <CheckIcon width={15} height={15} /> : <GripIcon width={15} height={15} />}
+            {arranging ? 'Done' : 'Arrange'}
+          </button>
+        )}
+      </div>
+      <AnimatePresence mode="wait" initial={false}>
+        {arranging ? (
+          <motion.div key="arrange" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
+            {/* remount when the server's order changes under us (another tab, a move) */}
+            <ArrangeList key={stack.books.map((b) => b.id).join()} stack={stack} />
+          </motion.div>
+        ) : (
+          <motion.div key="board" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
+            <StatusBoard stack={stack} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/**
+ * The stack's books grouped by status, each group in stack order. Tiles share a layoutId
+ * across groups, so when a sync finishes a book it visibly moves from "Reading now" to "Done".
+ */
+function StatusBoard({ stack }: { stack: StackDetailDto }) {
   return (
     <LayoutGroup>
       <div className="space-y-12">
@@ -180,17 +233,14 @@ function StackBoard({ stack }: { stack: StackDetailDto }) {
                     <motion.li
                       key={b.id}
                       layoutId={`stack-tile-${b.id}`}
+                      // tiles are transformed (own stacking context): lift the one whose menu is open
+                      className="relative hover:z-20 focus-within:z-20"
                       initial={{ opacity: 0, scale: 0.85 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.85 }}
                       transition={spring.morph}
                     >
-                      <BoardTile
-                        item={b}
-                        removing={membership.isPending && membership.variables.libraryBookId === b.id}
-                        onRemove={() => membership.mutate({ stackId: stack.id, libraryBookId: b.id, member: false })}
-                        stackName={stack.name}
-                      />
+                      <BoardTile item={b} stack={stack} />
                     </motion.li>
                   ))}
                 </AnimatePresence>
@@ -198,18 +248,89 @@ function StackBoard({ stack }: { stack: StackDetailDto }) {
             </motion.section>
           );
         })}
-        {membership.isError && <ErrorState error={membership.error} compact />}
       </div>
     </LayoutGroup>
   );
 }
 
-function BoardTile({ item, stackName, removing, onRemove }: {
-  item: LibraryBookDto;
-  stackName: string;
-  removing: boolean;
-  onRemove: () => void;
-}) {
+/** Drag to reorder (or use the arrows: same result, keyboard-friendly). Saves on drop. */
+function ArrangeList({ stack }: { stack: StackDetailDto }) {
+  const reorder = useReorderStack(stack.id);
+  const [order, setOrder] = useState(() => stack.books.map((b) => b.id));
+  // what to save on drop: updated by the reorder handler, read in onDragEnd
+  const latest = useRef(order);
+  const byId = new Map(stack.books.map((b) => [b.id, b]));
+  const saved = stack.books.map((b) => b.id).join();
+
+  function commit(next = latest.current) {
+    if (next.join() !== saved) reorder.mutate(next);
+  }
+
+  function update(next: string[]) {
+    latest.current = next;
+    setOrder(next);
+  }
+
+  function nudge(index: number, by: -1 | 1) {
+    const next = [...order];
+    const [item] = next.splice(index, 1);
+    next.splice(index + by, 0, item!);
+    update(next);
+    commit(next);
+  }
+
+  return (
+    <>
+      <Reorder.Group axis="y" values={order} onReorder={update} className="space-y-2">
+        {order.map((id, i) => {
+          const b = byId.get(id);
+          if (!b) return null;
+          return (
+            <Reorder.Item
+              key={id}
+              value={id}
+              onDragEnd={() => commit()}
+              whileDrag={{ scale: 1.02, boxShadow: '0 24px 50px -20px rgb(0 0 0 / 0.45)', zIndex: 10 }}
+              className="glass relative flex cursor-grab touch-none select-none items-center gap-4 rounded-2xl p-3 active:cursor-grabbing"
+            >
+              <span className="text-muted">
+                <GripIcon />
+              </span>
+              <span className="w-5 text-right text-sm tabular-nums text-muted">{i + 1}</span>
+              <Cover book={b.book} size="xs" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium">{b.book.title}</p>
+                <p className="truncate text-sm text-muted">{authorsLine(b.book.authors)}</p>
+              </div>
+              <StatusLabel status={b.status} className="hidden sm:inline-flex" />
+              <div className="flex flex-col">
+                <button
+                  onClick={() => nudge(i, -1)}
+                  disabled={i === 0}
+                  aria-label={`Move ${b.book.title} up`}
+                  className="rounded-md p-0.5 text-muted hover:bg-ink/[0.06] hover:text-ink disabled:opacity-25"
+                >
+                  <ChevronIcon dir="up" width={16} height={16} />
+                </button>
+                <button
+                  onClick={() => nudge(i, 1)}
+                  disabled={i === order.length - 1}
+                  aria-label={`Move ${b.book.title} down`}
+                  className="rounded-md p-0.5 text-muted hover:bg-ink/[0.06] hover:text-ink disabled:opacity-25"
+                >
+                  <ChevronIcon width={16} height={16} />
+                </button>
+              </div>
+            </Reorder.Item>
+          );
+        })}
+      </Reorder.Group>
+      {reorder.isError && <ErrorState error={reorder.error} compact />}
+    </>
+  );
+}
+
+function BoardTile({ item, stack }: { item: LibraryBookDto; stack: StackDetailDto }) {
   return (
     <div className="group relative">
       <Link {...bookLink(item.id, 'stack')} className="block">
@@ -228,16 +349,76 @@ function BoardTile({ item, stackName, removing, onRemove }: {
       ) : (
         <p className="mt-1 truncate text-xs text-muted">{authorsLine(item.book.authors)}</p>
       )}
+      <TileMenu item={item} stack={stack} />
+    </div>
+  );
+}
+
+/** Move to another stack, or take it out of this one. */
+function TileMenu({ item, stack }: { item: LibraryBookDto; stack: StackDetailDto }) {
+  const [open, setOpen] = useState(false);
+  const stacks = useStacks();
+  const move = useMoveStackBook();
+  const membership = useStackMembership();
+  const fly = useFly();
+  const anchor = useRef<HTMLDivElement>(null);
+  const others = (stacks.data ?? []).filter((s) => s.id !== stack.id);
+  const busy = move.isPending || membership.isPending;
+  const close = useCallback(() => setOpen(false), []);
+
+  function moveTo(toStackId: string) {
+    setOpen(false);
+    // the cover leaves the tile toward the Stacks tab; the tile itself animates out
+    const cover = anchor.current?.parentElement?.querySelector('img');
+    if (cover) fly(item.book.coverUrl, cover, 'stacks');
+    move.mutate({ from: stack.id, libraryBookId: item.id, to: toStackId });
+  }
+
+  return (
+    <div ref={anchor} className="absolute -right-2 -top-2">
       <motion.button
-        onClick={onRemove}
-        disabled={removing}
+        onClick={() => setOpen((o) => !o)}
+        disabled={busy}
         whileTap={{ scale: 0.85 }}
-        aria-label={`Remove ${item.book.title} from ${stackName}`}
-        title={`Remove from ${stackName}`}
-        className="absolute -right-2 -top-2 grid size-7 place-items-center rounded-full bg-ink text-paper opacity-0 shadow-md transition-opacity focus-visible:opacity-100 group-hover:opacity-100 disabled:opacity-40"
+        aria-label={`Actions for ${item.book.title}`}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className={cx(
+          'grid size-8 place-items-center rounded-full bg-ink text-paper shadow-md transition-opacity focus-visible:opacity-100 group-hover:opacity-100 disabled:opacity-40',
+          open ? 'opacity-100' : 'opacity-0',
+        )}
       >
-        <CloseIcon width={14} height={14} />
+        <MoreIcon width={16} height={16} />
       </motion.button>
+      <Popover open={open} onClose={close} className="right-0 top-10">
+        {others.length > 0 && (
+          <>
+            <MenuLabel>Move to</MenuLabel>
+            {others.map((s) => (
+              <MenuItem key={s.id} onClick={() => moveTo(s.id)}>
+                <ArrowIcon width={14} height={14} className="text-muted" />
+                <span className="truncate">{s.name}</span>
+              </MenuItem>
+            ))}
+            <div className="my-1 h-px bg-ink/[0.06]" />
+          </>
+        )}
+        <MenuItem
+          danger
+          onClick={() => {
+            setOpen(false);
+            membership.mutate({ stackId: stack.id, libraryBookId: item.id, member: false });
+          }}
+        >
+          <CloseIcon width={14} height={14} />
+          Remove from {stack.name}
+        </MenuItem>
+      </Popover>
+      {(move.isError || membership.isError) && (
+        <div className="absolute right-0 top-10 w-56 rounded-xl bg-white p-2 shadow-lg">
+          <ErrorState error={move.error ?? membership.error} compact />
+        </div>
+      )}
     </div>
   );
 }

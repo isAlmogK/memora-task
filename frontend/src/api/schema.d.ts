@@ -145,6 +145,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/stacks/{id}/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Reorder the stack: send every book id in the new order */
+        put: operations["StacksController_reorder"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/stacks/{id}/books/{libraryBookId}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Move a book to another stack (atomic; it goes to the end) */
+        post: operations["StacksController_move"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/progress-events": {
         parameters: {
             query?: never;
@@ -362,6 +396,21 @@ export interface components {
             targetCount?: number | null;
             /** Format: date */
             dueOn?: string | null;
+        };
+        ReorderStackBody: {
+            /** @description Library book ids, first to last */
+            libraryBookIds: string[];
+        };
+        MoveStackBookBody: {
+            /**
+             * Format: uuid
+             * @description The stack to move the book into (it goes to the end)
+             */
+            toStackId: string;
+        };
+        MoveResultDto: {
+            from: components["schemas"]["StackDetailDto"];
+            to: components["schemas"]["StackDetailDto"];
         };
         DeviceProgressEventBody: {
             /** Format: uuid */
@@ -1169,6 +1218,129 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StackDetailDto"];
+                };
+            };
+            /** @description Validation failed (details has one message per field) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /** @description Missing, unknown or revoked API key */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /** @description Valid key, wrong scope (a device key on a user endpoint) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /** @description Not found, or it belongs to someone else (we don't say which) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+        };
+    };
+    StacksController_reorder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderStackBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StackDetailDto"];
+                };
+            };
+            /** @description Validation failed (details has one message per field) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /** @description Missing, unknown or revoked API key */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /** @description Valid key, wrong scope (a device key on a user endpoint) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /** @description Not found, or it belongs to someone else (we don't say which) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+        };
+    };
+    StacksController_move: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                libraryBookId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveStackBookBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MoveResultDto"];
                 };
             };
             /** @description Validation failed (details has one message per field) */

@@ -66,6 +66,10 @@ user, set `VITE_API_KEY=dev-bob-user-key` in `frontend/.env.local`.
   automatic ones: **Library** (everything, filterable by status), **Want to read**, **Read**
   and **Put down**. Books sort into these by their reading status.
 - **New stack**: give it a target and a due date to see whether you're on track.
+- **Inside a stack**: hover a book for its menu to **move** it to another stack or **remove** it;
+  **Arrange** switches to a list you can drag (or nudge with the arrows) into your own order.
+  *Add from your library* puts more books in.
+- **Library**: hover any book to add it to a stack or remove it from your library.
 - **Read** (mock mode for now): your stats: books and pages read, books per month, genres,
   streaks, and a reading-days heatmap. Each chart has a table view.
 - **Sync Kindle** (mock mode for now): a simulated sync job; progress bars move one book at a

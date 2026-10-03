@@ -42,3 +42,25 @@ export const CloseIcon = (p: SVGProps<SVGSVGElement>) => (
     <path d="M6 6l12 12M18 6 6 18" />
   </svg>
 );
+export const MoreIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base} {...p} aria-hidden>
+    <circle cx="5" cy="12" r="1.2" fill="currentColor" />
+    <circle cx="12" cy="12" r="1.2" fill="currentColor" />
+    <circle cx="19" cy="12" r="1.2" fill="currentColor" />
+  </svg>
+);
+export const GripIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base} {...p} aria-hidden>
+    {[6, 12, 18].map((y) => (
+      <g key={y}>
+        <circle cx="9" cy={y} r="1.1" fill="currentColor" />
+        <circle cx="15" cy={y} r="1.1" fill="currentColor" />
+      </g>
+    ))}
+  </svg>
+);
+export const ChevronIcon = ({ dir = 'down', ...p }: SVGProps<SVGSVGElement> & { dir?: 'up' | 'down' }) => (
+  <svg {...base} {...p} aria-hidden style={{ transform: dir === 'up' ? 'rotate(180deg)' : undefined }}>
+    <path d="m6 9 6 6 6-6" />
+  </svg>
+);

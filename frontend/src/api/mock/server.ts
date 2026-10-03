@@ -376,6 +376,34 @@ export const mockApi: StacksApi = {
 
   getStats: () => respond(() => deriveStats(db(), Date.now())),
 
+  // Same rules as the API: the order must be exactly the stack's books; move is atomic.
+  reorderStack: (stackId, libraryBookIds) =>
+    respond(() => {
+      const s = db();
+      const st = findStack(s, stackId);
+      const same = libraryBookIds.length === st.bookIds.length && new Set(libraryBookIds).size === st.bookIds.length;
+      if (!same || libraryBookIds.some((id) => !st.bookIds.includes(id))) {
+        throw new ApiError(400, 'validation_failed', 'Request is invalid', { libraryBookIds: 'must list every book in the stack exactly once' });
+      }
+      st.bookIds = [...libraryBookIds];
+      return stackDetail(s, st);
+    }),
+
+  moveStackBook: (fromStackId, libraryBookId, toStackId) =>
+    respond(() => {
+      const s = db();
+      if (fromStackId === toStackId) {
+        throw new ApiError(400, 'validation_failed', 'Request is invalid', { toStackId: 'must be a different stack' });
+      }
+      const from = findStack(s, fromStackId);
+      const to = s.stacks.find((x) => x.id === toStackId);
+      if (!to) throw notFound('Target stack');
+      if (!from.bookIds.includes(libraryBookId)) throw new ApiError(404, 'not_found', 'That book isn’t in this stack');
+      from.bookIds = from.bookIds.filter((id) => id !== libraryBookId);
+      if (!to.bookIds.includes(libraryBookId)) to.bookIds.push(libraryBookId);
+      return { from: stackDetail(s, from), to: stackDetail(s, to) };
+    }),
+
   startSync: () =>
     respond(
       () => {

@@ -62,6 +62,15 @@ export const httpApi: StacksApi = {
     unwrap(client.PUT('/v1/stacks/{id}/books/{libraryBookId}', { params: { path: { id: stackId, libraryBookId } } })),
   removeFromStack: (stackId, libraryBookId) =>
     unwrap(client.DELETE('/v1/stacks/{id}/books/{libraryBookId}', { params: { path: { id: stackId, libraryBookId } } })),
+  reorderStack: (stackId, libraryBookIds) =>
+    unwrap(client.PUT('/v1/stacks/{id}/order', { params: { path: { id: stackId } }, body: { libraryBookIds } })),
+  moveStackBook: (fromStackId, libraryBookId, toStackId) =>
+    unwrap(
+      client.POST('/v1/stacks/{id}/books/{libraryBookId}/move', {
+        params: { path: { id: fromStackId, libraryBookId } },
+        body: { toStackId },
+      }),
+    ),
 
   // TEMPORARY: the next backend step. Until then these get the API's 404 and the UI shows
   // its error state.
