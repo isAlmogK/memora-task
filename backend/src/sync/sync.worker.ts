@@ -8,6 +8,8 @@ import { PROGRESS_SOURCE, type ProgressSource } from './progress-source';
 
 /** A run still "running" this long after it started has lost its worker. */
 const STALE_AFTER = '5 minutes';
+/** Looking for stale runs is housekeeping: once a minute is plenty, not every poll. */
+const STALE_CHECK_EVERY_MS = 60_000;
 
 /**
  * Background worker: polls for queued runs and processes them one at a time.
@@ -22,6 +24,7 @@ export class SyncWorker implements OnApplicationBootstrap, OnApplicationShutdown
   private readonly log = new Logger(SyncWorker.name);
   private timer?: NodeJS.Timeout;
   private busy = false;
+  private lastStaleCheck = 0;
 
   constructor(
     @InjectDb() private readonly db: Db,
@@ -31,11 +34,23 @@ export class SyncWorker implements OnApplicationBootstrap, OnApplicationShutdown
 
   onApplicationBootstrap(): void {
     if (!config.sync.workerEnabled) return; // tests drive tick() themselves
-    this.timer = setInterval(() => void this.tick(), config.sync.pollMs);
+    // The poll is a backstop (runs queued by another instance, or while this one was busy):
+    // a run queued here gets kick()ed straight away.
+    this.timer = setInterval(() => void this.drain(), config.sync.pollMs);
+  }
+
+  /** Called when a run is queued in this process, so it starts now instead of on the next poll. */
+  kick(): void {
+    if (config.sync.workerEnabled) void this.drain();
   }
 
   onApplicationShutdown(): void {
     clearInterval(this.timer);
+  }
+
+  /** Processes queued runs until there are none left. */
+  private async drain(): Promise<void> {
+    while (await this.tick());
   }
 
   /** Claims and processes at most one queued run. Returns whether it found one. */
@@ -43,7 +58,10 @@ export class SyncWorker implements OnApplicationBootstrap, OnApplicationShutdown
     if (this.busy) return false;
     this.busy = true;
     try {
-      await this.failStaleRuns();
+      if (Date.now() - this.lastStaleCheck >= STALE_CHECK_EVERY_MS) {
+        this.lastStaleCheck = Date.now();
+        await this.recoverStaleRuns();
+      }
       const { rows } = await this.db.execute<{ id: string; user_id: string }>(sql`
         update ${syncRun} set status = 'running', started_at = now()
         where id = (
@@ -93,7 +111,7 @@ export class SyncWorker implements OnApplicationBootstrap, OnApplicationShutdown
   }
 
   /** A crash mid-run would otherwise leave the user's single active slot taken forever. */
-  private async failStaleRuns(): Promise<void> {
+  async recoverStaleRuns(): Promise<void> {
     await this.db
       .update(syncRun)
       .set({ status: 'failed', error: 'The sync was interrupted. Try again.', finishedAt: new Date() })

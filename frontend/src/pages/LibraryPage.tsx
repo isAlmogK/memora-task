@@ -2,13 +2,13 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Link, useSearchParams } from 'react-router';
 import { useLibrary } from '../api/queries';
 import type { LibraryBookDto, LibraryStatusFilter } from '../api/types';
+import { BackLink } from '../components/BackLink';
 import { BookActionsMenu } from '../components/BookActionsMenu';
 import { Cover } from '../components/Cover';
 import { ProgressBar } from '../components/ProgressBar';
 import { CoverSkeleton, EmptyState, QueryState, Skeleton } from '../components/QueryState';
 import { SearchButton } from '../components/SearchOverlay';
 import { StatusLabel } from '../components/StatusLabel';
-import { ArrowIcon } from '../components/icons';
 import { bookLink, coverLayoutId } from '../lib/coverMorph';
 import { cx } from '../lib/cx';
 import { STATUS_LABEL } from '../lib/format';
@@ -30,12 +30,7 @@ export function LibraryPage() {
 
   return (
     <div className="pt-6">
-      <Link to="/stacks" className="group inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink">
-        <span className="transition-transform group-hover:-translate-x-0.5">
-          <ArrowIcon dir="left" width={15} height={15} />
-        </span>
-        Stacks
-      </Link>
+      <BackLink to="/stacks">Stacks</BackLink>
       <div className="mt-4 mb-8 flex items-center gap-2">
         <h1 className="font-display text-4xl sm:text-5xl">Library</h1>
         <span className="rounded-full bg-ink px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-paper">Auto</span>

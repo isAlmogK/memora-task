@@ -63,7 +63,7 @@ describe('with the simulated Kindle', () => {
       .insert(schema.syncRun)
       .values({ userId: fx.alice, source: 'kindle_sim', status: 'running', startedAt: new Date(Date.now() - 10 * 60_000) })
       .returning();
-    await worker.tick();
+    await worker.recoverStaleRuns(); // tick() does this at most once a minute
     const [row] = await h.db.select().from(schema.syncRun).where(eq(schema.syncRun.id, stuck!.id));
     expect(row).toMatchObject({ status: 'failed', error: 'The sync was interrupted. Try again.' });
   });

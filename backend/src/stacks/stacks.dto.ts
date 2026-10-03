@@ -1,5 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { ApiProperty, OmitType, PartialType } from '@nestjs/swagger';
 import {
   ArrayMaxSize,
   ArrayUnique,
@@ -15,9 +14,8 @@ import {
   Min,
   ValidateIf,
 } from 'class-validator';
+import { Trim } from '../common/transforms';
 import { LibraryBookDto, READING_STATUSES, type ReadingStatus } from '../library/library.dto';
-
-const trim = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value);
 
 // ---------- requests ----------
 
@@ -27,14 +25,14 @@ const trim = ({ value }: { value: unknown }) => (typeof value === 'string' ? val
  */
 export class CreateStackBody {
   @ApiProperty({ minLength: 1, maxLength: 80, example: 'Autumn sci-fi' })
-  @Transform(trim)
+  @Trim()
   @IsString({ message: 'must be text' })
   @Length(1, 80, { message: 'must be 1–80 characters' })
   name!: string;
 
   @ApiProperty({ type: String, nullable: true, required: false, maxLength: 500 })
   @IsOptional()
-  @Transform(trim)
+  @Trim()
   @IsString({ message: 'must be text' })
   @MaxLength(500, { message: 'must be at most 500 characters' })
   description?: string | null;
@@ -52,33 +50,14 @@ export class CreateStackBody {
   dueOn?: string | null;
 }
 
-/** Same rules, every field optional. `name` may be omitted but not nulled. */
-export class UpdateStackBody {
+/** Same rules, every field optional (null clears the optional ones). `name` may be omitted but not nulled. */
+export class UpdateStackBody extends PartialType(OmitType(CreateStackBody, ['name'] as const)) {
   @ApiProperty({ required: false, minLength: 1, maxLength: 80 })
   @ValidateIf((_, v) => v !== undefined)
-  @Transform(trim)
+  @Trim()
   @IsString({ message: 'must be text' })
   @Length(1, 80, { message: 'must be 1–80 characters' })
   name?: string;
-
-  @ApiProperty({ type: String, nullable: true, required: false, maxLength: 500 })
-  @IsOptional()
-  @Transform(trim)
-  @IsString({ message: 'must be text' })
-  @MaxLength(500, { message: 'must be at most 500 characters' })
-  description?: string | null;
-
-  @ApiProperty({ type: Number, nullable: true, required: false, minimum: 1, maximum: 500 })
-  @IsOptional()
-  @IsInt({ message: 'must be a whole number between 1 and 500' })
-  @Min(1, { message: 'must be a whole number between 1 and 500' })
-  @Max(500, { message: 'must be a whole number between 1 and 500' })
-  targetCount?: number | null;
-
-  @ApiProperty({ type: String, format: 'date', nullable: true, required: false })
-  @IsOptional()
-  @Matches(/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/, { message: 'must be a YYYY-MM-DD date' })
-  dueOn?: string | null;
 }
 
 /** The stack's complete new order: every book in it, exactly once. */

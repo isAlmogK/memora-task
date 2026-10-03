@@ -13,6 +13,8 @@ import {
   useUpdateStack,
 } from '../api/queries';
 import type { LibraryBookDto, ReadingStatus, StackDetailDto } from '../api/types';
+import { BackLink } from '../components/BackLink';
+import { ConfirmAction } from '../components/ConfirmAction';
 import { Confetti } from '../components/Confetti';
 import { Cover } from '../components/Cover';
 import { useFly, useFlyTarget } from '../components/fly';
@@ -25,8 +27,8 @@ import { SearchButton } from '../components/SearchOverlay';
 import { useCompletionBurst } from '../components/useCompletionBurst';
 import { useAmbientFrom } from '../components/ambient';
 import { CountUp } from '../components/CountUp';
-import { ArrowIcon, CheckIcon, ChevronIcon, CloseIcon, GripIcon, MoreIcon, PlusIcon } from '../components/icons';
-import { MenuItem, MenuLabel, Popover } from '../components/Popover';
+import { ArrowIcon, CheckIcon, ChevronIcon, CloseIcon, GripIcon, PlusIcon } from '../components/icons';
+import { MenuItem, MenuLabel, MenuTrigger, Popover } from '../components/Popover';
 import { StatusLabel } from '../components/StatusLabel';
 import { bookLink, coverLayoutId } from '../lib/coverMorph';
 import { cx } from '../lib/cx';
@@ -63,12 +65,7 @@ function StackDetail({ stack }: { stack: StackDetailDto }) {
 
   return (
     <div className="pt-6">
-      <Link to="/stacks" className="group inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink">
-        <span className="transition-transform group-hover:-translate-x-0.5">
-          <ArrowIcon dir="left" width={15} height={15} />
-        </span>
-        Stacks
-      </Link>
+      <BackLink to="/stacks">Stacks</BackLink>
 
       <div className="glass mt-6 grid items-center gap-8 rounded-[32px] p-6 sm:p-10 md:grid-cols-[auto_1fr] md:gap-14">
         <motion.div {...target} className="relative flex justify-center">
@@ -125,30 +122,16 @@ function StackDetail({ stack }: { stack: StackDetailDto }) {
 function DeleteStack({ stack }: { stack: StackDetailDto }) {
   const del = useDeleteStack();
   const navigate = useNavigate();
-  const [confirming, setConfirming] = useState(false);
-
-  if (!confirming) {
-    return (
-      <button onClick={() => setConfirming(true)} className="rounded-full px-3 py-1.5 text-sm text-muted hover:bg-danger/10 hover:text-danger">
-        Delete
-      </button>
-    );
-  }
   return (
-    <motion.div initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} className="flex flex-wrap items-center gap-2 text-sm">
-      <span className="text-muted">Delete “{stack.name}”? The books stay in your library.</span>
-      <button
-        onClick={() => del.mutate(stack.id, { onSuccess: () => navigate('/stacks') })}
-        disabled={del.isPending}
-        className="rounded-full bg-danger px-3 py-1.5 text-paper disabled:opacity-60"
-      >
-        {del.isPending ? 'Deleting…' : 'Delete'}
-      </button>
-      <button onClick={() => setConfirming(false)} className="px-2 py-1.5 text-muted hover:text-ink">
-        Cancel
-      </button>
-      {del.isError && <ErrorState error={del.error} compact />}
-    </motion.div>
+    <ConfirmAction
+      label="Delete"
+      confirmLabel="Delete"
+      question={<>Delete “{stack.name}”? The books stay in your library.</>}
+      pendingLabel="Deleting…"
+      pending={del.isPending}
+      error={del.error}
+      onConfirm={() => del.mutate(stack.id, { onSuccess: () => navigate('/stacks') })}
+    />
   );
 }
 
@@ -376,20 +359,7 @@ function TileMenu({ item, stack }: { item: LibraryBookDto; stack: StackDetailDto
 
   return (
     <div ref={anchor} className="absolute -right-2 -top-2">
-      <motion.button
-        onClick={() => setOpen((o) => !o)}
-        disabled={busy}
-        whileTap={{ scale: 0.85 }}
-        aria-label={`Actions for ${item.book.title}`}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        className={cx(
-          'grid size-8 place-items-center rounded-full bg-ink text-paper shadow-md transition-opacity focus-visible:opacity-100 group-hover:opacity-100 disabled:opacity-40',
-          open ? 'opacity-100' : 'opacity-0',
-        )}
-      >
-        <MoreIcon width={16} height={16} />
-      </motion.button>
+      <MenuTrigger label={`Actions for ${item.book.title}`} open={open} disabled={busy} onToggle={() => setOpen((o) => !o)} />
       <Popover open={open} onClose={close} className="right-0 top-10">
         {others.length > 0 && (
           <>

@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { cx } from '../lib/cx';
+import { MoreIcon } from './icons';
 
 /** A small floating menu anchored to its parent (which should be `relative`). Closes on outside click or Esc. */
 export function Popover({ open, onClose, children, className }: {
@@ -69,5 +70,33 @@ export function MenuItem({ onClick, disabled, danger, children }: {
     >
       {children}
     </button>
+  );
+}
+
+/** The round "⋯" button on a tile: shown on hover/focus (or while its menu is open). */
+export function MenuTrigger({ label, open, disabled, onToggle }: {
+  label: string;
+  open: boolean;
+  disabled?: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <motion.button
+      onClick={(e) => {
+        e.preventDefault(); // tiles are often links
+        onToggle();
+      }}
+      disabled={disabled}
+      whileTap={{ scale: 0.85 }}
+      aria-label={label}
+      aria-haspopup="menu"
+      aria-expanded={open}
+      className={cx(
+        'grid size-8 place-items-center rounded-full bg-ink text-paper shadow-md transition-opacity focus-visible:opacity-100 group-hover:opacity-100 disabled:opacity-40',
+        open ? 'opacity-100' : 'opacity-0',
+      )}
+    >
+      <MoreIcon width={16} height={16} />
+    </motion.button>
   );
 }

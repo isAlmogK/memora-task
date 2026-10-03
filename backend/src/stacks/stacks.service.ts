@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import { ApiError } from '../common/api-error';
+import { pgError } from '../common/pg-error';
 import { Db, InjectDb } from '../db/db.module';
 import { stack, stackBook, userBook, userBookProgress as ubp } from '../db/schema';
 import type { ReadingStatus } from '../library/library.dto';
@@ -24,11 +25,8 @@ interface SummaryRow extends Record<string, unknown> {
 
 /** Postgres unique violation on the case-insensitive (user_id, lower(name)) index. */
 function isNameTaken(err: unknown): boolean {
-  for (let e: unknown = err; e && typeof e === 'object'; e = (e as { cause?: unknown }).cause) {
-    const pg = e as { code?: string; constraint?: string };
-    if (pg.code === '23505' && pg.constraint === 'stack_user_name_unique') return true;
-  }
-  return false;
+  const pg = pgError(err);
+  return pg?.code === '23505' && pg.constraint === 'stack_user_name_unique';
 }
 
 @Injectable()
@@ -40,17 +38,28 @@ export class StacksService {
   }
 
   async detail(userId: string, id: string): Promise<StackDetailDto> {
-    const [summary] = await this.summaries(userId, id);
+    const [[summary], order] = await Promise.all([
+      this.summaries(userId, id, { withPreviews: false }),
+      this.db
+        .select({ userBookId: stackBook.userBookId })
+        .from(stackBook)
+        .where(and(eq(stackBook.userId, userId), eq(stackBook.stackId, id)))
+        .orderBy(asc(stackBook.position), asc(stackBook.addedAt)),
+    ]);
     if (!summary) throw ApiError.notFound('Stack');
-    const order = await this.db
-      .select({ userBookId: stackBook.userBookId })
-      .from(stackBook)
-      .where(and(eq(stackBook.userId, userId), eq(stackBook.stackId, id)))
-      .orderBy(asc(stackBook.position), asc(stackBook.addedAt));
     const ids = order.map((o) => o.userBookId);
     const rows = ids.length ? await selectLibraryRows(this.db, and(eq(ubp.userId, userId), inArray(ubp.userBookId, ids))) : [];
-    const byId = new Map(rows.map((r) => [r.id, r]));
-    return { ...summary, books: ids.flatMap((bid) => (byId.has(bid) ? [toLibraryBookDto(byId.get(bid)!)] : [])) };
+    const byId = new Map(rows.map((r) => [r.id, toLibraryBookDto(r)]));
+    const books = ids.flatMap((bid) => byId.get(bid) ?? []);
+    // the detail already has every book in order, so the preview is just its head
+    const preview = books.slice(0, PREVIEW_SIZE).map((b) => ({
+      libraryBookId: b.id,
+      title: b.book.title,
+      coverUrl: b.book.coverUrl,
+      pageCount: b.book.pageCount,
+      status: b.status,
+    }));
+    return { ...summary, preview, books };
   }
 
   async create(userId: string, body: CreateStackBody): Promise<StackSummaryDto> {
@@ -210,7 +219,7 @@ export class StacksService {
    * the goal is met; otherwise finished/goal must keep up with the share of the
    * [created, due] window that has passed (whole UTC days).
    */
-  private async summaries(userId: string, id?: string): Promise<StackSummaryDto[]> {
+  private async summaries(userId: string, id?: string, { withPreviews = true } = {}): Promise<StackSummaryDto[]> {
     const { rows } = await this.db.execute<SummaryRow>(sql`
       select c.id, c.name, c.description, c.target_count, c.created_at, c.book_count, c.finished_count,
         c.due_on::text as due_on, -- as text: node-postgres would turn a date into a local-midnight Date
@@ -237,10 +246,7 @@ export class StacksService {
     `);
     if (rows.length === 0) return [];
 
-    const previews = await this.previews(
-      userId,
-      rows.map((r) => r.id),
-    );
+    const previews = withPreviews ? await this.previews(userId, rows.map((r) => r.id)) : new Map<string, StackSummaryDto['preview']>();
     return rows.map((r) => ({
       id: r.id,
       name: r.name,

@@ -4,6 +4,7 @@ import { ApiError } from '../common/api-error';
 import { Db, InjectDb } from '../db/db.module';
 import { syncRun } from '../db/schema';
 import type { SyncRunDto } from './sync.dto';
+import { SyncWorker } from './sync.worker';
 
 type SyncRunRow = typeof syncRun.$inferSelect;
 
@@ -23,7 +24,10 @@ export function toSyncRunDto(r: SyncRunRow): SyncRunDto {
 /** The API side of syncing: queue a run, read runs. The work happens in SyncWorker. */
 @Injectable()
 export class SyncService {
-  constructor(@InjectDb() private readonly db: Db) {}
+  constructor(
+    @InjectDb() private readonly db: Db,
+    private readonly worker: SyncWorker,
+  ) {}
 
   /**
    * Queues a Kindle sync, or returns the one already queued/running: the partial unique
@@ -35,7 +39,10 @@ export class SyncService {
       .values({ userId, source: 'kindle_sim' })
       .onConflictDoNothing({ target: syncRun.userId, where: inArray(syncRun.status, ['queued', 'running']) })
       .returning();
-    if (created) return toSyncRunDto(created);
+    if (created) {
+      this.worker.kick();
+      return toSyncRunDto(created);
+    }
 
     const [active] = await this.db
       .select()

@@ -4,6 +4,8 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { ApiError } from '../api/errors';
 import { useLibraryBook, useRemoveFromLibrary, useStackMembership, useStacks, useUpdateLibraryBook } from '../api/queries';
 import type { LibraryBookDetailDto, ReadingEventDto } from '../api/types';
+import { BackLink } from '../components/BackLink';
+import { ConfirmAction } from '../components/ConfirmAction';
 import { CountUp } from '../components/CountUp';
 import { Cover } from '../components/Cover';
 import { PaceLine } from '../components/Pace';
@@ -12,7 +14,7 @@ import { ProgressUpdater } from '../components/ProgressUpdater';
 import { CoverSkeleton, ErrorState, QueryState, Skeleton } from '../components/QueryState';
 import { StatusLabel } from '../components/StatusLabel';
 import { useAmbientFrom } from '../components/ambient';
-import { ArrowIcon, CheckIcon, PlusIcon } from '../components/icons';
+import { CheckIcon, PlusIcon } from '../components/icons';
 import { coverLayoutId, useCoverScope, type CoverScope } from '../lib/coverMorph';
 import { cx } from '../lib/cx';
 import { authorsLine, formatPercent, SOURCE_LABEL, timeAgo } from '../lib/format';
@@ -95,23 +97,6 @@ function BookDetail({ item, scope, loadingDetail }: { item: LibraryBookDetailDto
   );
 }
 
-function BackLink() {
-  const navigate = useNavigate();
-  // React Router keeps its own history index; > 0 means there's an in-app page to go back to.
-  const canGoBack = ((window.history.state as { idx?: number } | null)?.idx ?? 0) > 0;
-  return (
-    <button
-      onClick={() => (canGoBack ? navigate(-1) : navigate('/'))}
-      className="group inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink"
-    >
-      <span className="transition-transform group-hover:-translate-x-0.5">
-        <ArrowIcon dir="left" width={15} height={15} />
-      </span>
-      Back
-    </button>
-  );
-}
-
 /** Finished / put down are explicit user choices; everything else is derived from progress events. */
 function StatusActions({ item }: { item: LibraryBookDetailDto }) {
   const update = useUpdateLibraryBook(item.id);
@@ -150,35 +135,16 @@ function StatusActions({ item }: { item: LibraryBookDetailDto }) {
 function RemoveFromLibrary({ item }: { item: LibraryBookDetailDto }) {
   const remove = useRemoveFromLibrary();
   const navigate = useNavigate();
-  const [confirming, setConfirming] = useState(false);
-
-  if (!confirming) {
-    return (
-      <button
-        onClick={() => setConfirming(true)}
-        className="rounded-full px-3 py-1.5 text-sm text-muted hover:bg-danger/10 hover:text-danger"
-      >
-        Remove from library
-      </button>
-    );
-  }
   return (
-    <motion.div initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} className="flex flex-wrap items-center gap-2 text-sm">
-      <span className="text-muted">
-        Remove “{item.book.title}”? Its reading history{item.stacks.length > 0 && ' and stack memberships'} go too.
-      </span>
-      <button
-        onClick={() => remove.mutate(item.id, { onSuccess: () => navigate('/library', { replace: true }) })}
-        disabled={remove.isPending}
-        className="rounded-full bg-danger px-3 py-1.5 text-paper disabled:opacity-60"
-      >
-        {remove.isPending ? 'Removing…' : 'Remove'}
-      </button>
-      <button onClick={() => setConfirming(false)} className="px-2 py-1.5 text-muted hover:text-ink">
-        Cancel
-      </button>
-      {remove.isError && <ErrorState error={remove.error} compact />}
-    </motion.div>
+    <ConfirmAction
+      label="Remove from library"
+      confirmLabel="Remove"
+      question={<>Remove “{item.book.title}”? Its reading history{item.stacks.length > 0 && ' and stack memberships'} go too.</>}
+      pendingLabel="Removing…"
+      pending={remove.isPending}
+      error={remove.error}
+      onConfirm={() => remove.mutate(item.id, { onSuccess: () => navigate('/library', { replace: true }) })}
+    />
   );
 }
 

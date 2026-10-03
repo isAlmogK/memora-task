@@ -2,6 +2,7 @@ import { motion } from 'motion/react';
 import { Link } from 'react-router';
 import { useLibrary, useStats } from '../api/queries';
 import type { LibraryBookDto, ReadingStatsDto } from '../api/types';
+import { BackLink } from '../components/BackLink';
 import { useAmbientFrom } from '../components/ambient';
 import { ChartCard } from '../components/charts/ChartCard';
 import { GenreBars } from '../components/charts/GenreBars';
@@ -13,7 +14,6 @@ import { Cover } from '../components/Cover';
 import { CoverSkeleton, EmptyState, QueryState, Skeleton } from '../components/QueryState';
 import { SearchButton } from '../components/SearchOverlay';
 import { StackFan } from '../components/StackFan';
-import { ArrowIcon } from '../components/icons';
 import { bookLink, coverLayoutId } from '../lib/coverMorph';
 import { asFanPreview, byFinishedDesc } from '../lib/finished';
 import { formatDate } from '../lib/format';
@@ -30,12 +30,7 @@ export function ReadPage() {
 
   return (
     <div className="pt-6">
-      <Link to="/stacks" className="group inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink">
-        <span className="transition-transform group-hover:-translate-x-0.5">
-          <ArrowIcon dir="left" width={15} height={15} />
-        </span>
-        Stacks
-      </Link>
+      <BackLink to="/stacks">Stacks</BackLink>
 
       <QueryState query={stats} loading={<ReadSkeleton />}>
         {(s) =>

@@ -1,6 +1,7 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, Logger } from '@nestjs/common';
 import type { Response } from 'express';
 import { ApiError } from './api-error';
+import { pgError } from './pg-error';
 
 /** Postgres SQLSTATEs that can still reach us when two requests race past a service check. */
 const PG_ERRORS: Record<string, [number, string, string]> = {
@@ -8,15 +9,6 @@ const PG_ERRORS: Record<string, [number, string, string]> = {
   '23503': [404, 'not_found', 'A referenced resource was not found'],
   '23514': [400, 'validation_failed', 'A value is out of range'],
 };
-
-function pgCode(err: unknown): string | undefined {
-  // node-postgres errors carry `code`; Drizzle wraps them in `cause`.
-  for (let e: unknown = err; e && typeof e === 'object'; e = (e as { cause?: unknown }).cause) {
-    const code = (e as { code?: unknown }).code;
-    if (typeof code === 'string' && /^[0-9A-Z]{5}$/.test(code)) return code;
-  }
-  return undefined;
-}
 
 /** Every failure leaves the API as `{ error: { code, message, details? } }`. */
 @Catch()
@@ -41,7 +33,7 @@ export class ErrorFilter implements ExceptionFilter {
       return [status, { error: { code, message } }];
     }
 
-    const pg = pgCode(err);
+    const pg = pgError(err)?.code;
     if (pg && PG_ERRORS[pg]) {
       const [status, code, message] = PG_ERRORS[pg];
       return [status, { error: { code, message } }];

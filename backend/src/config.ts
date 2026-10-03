@@ -21,7 +21,7 @@ export const config = {
   sync: {
     // tests call SyncWorker.tick() themselves
     workerEnabled: process.env.NODE_ENV !== 'test',
-    pollMs: Number(process.env.SYNC_POLL_MS ?? 500),
+    pollMs: Number(process.env.SYNC_POLL_MS ?? 2000),
     // pause between events so the UI can show them landing one by one; 0 in tests
     stepMs: Number(process.env.SYNC_STEP_MS ?? (process.env.NODE_ENV === 'test' ? 0 : 900)),
   },

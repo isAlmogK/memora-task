@@ -1,11 +1,9 @@
-import { motion } from 'motion/react';
 import { useCallback, useRef, useState } from 'react';
 import { useRemoveFromLibrary, useStackMembership, useStacks } from '../api/queries';
 import type { LibraryBookDto } from '../api/types';
-import { cx } from '../lib/cx';
 import { useFly } from './fly';
-import { CheckIcon, CloseIcon, MoreIcon, PlusIcon } from './icons';
-import { MenuItem, MenuLabel, Popover } from './Popover';
+import { CheckIcon, CloseIcon, PlusIcon } from './icons';
+import { MenuItem, MenuLabel, MenuTrigger, Popover } from './Popover';
 import { ErrorState } from './QueryState';
 
 /**
@@ -44,22 +42,7 @@ export function BookActionsMenu({ item }: { item: LibraryBookDto }) {
 
   return (
     <div ref={anchor} className="absolute -right-2 -top-2 z-10">
-      <motion.button
-        onClick={(e) => {
-          e.preventDefault(); // the tile is a link
-          setOpen((o) => !o);
-        }}
-        whileTap={{ scale: 0.85 }}
-        aria-label={`Actions for ${item.book.title}`}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        className={cx(
-          'grid size-8 place-items-center rounded-full bg-ink text-paper shadow-md transition-opacity focus-visible:opacity-100 group-hover:opacity-100',
-          open ? 'opacity-100' : 'opacity-0',
-        )}
-      >
-        <MoreIcon width={16} height={16} />
-      </motion.button>
+      <MenuTrigger label={`Actions for ${item.book.title}`} open={open} onToggle={() => setOpen((o) => !o)} />
       <Popover open={open} onClose={close} className="right-0 top-10">
         <MenuLabel>Add to stack</MenuLabel>
         {(stacks.data ?? []).length === 0 && <p className="px-2.5 py-2 text-muted">No stacks yet.</p>}
