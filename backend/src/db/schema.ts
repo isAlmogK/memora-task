@@ -33,6 +33,7 @@ const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull(
 
 export const apiKeyScope = pgEnum('api_key_scope', ['user', 'device']);
 export const progressSource = pgEnum('progress_source', ['manual', 'device', 'kindle_sim']);
+export const syncStatus = pgEnum('sync_status', ['queued', 'running', 'succeeded', 'failed']);
 
 export const appUser = pgTable('app_user', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -181,6 +182,39 @@ export const stackBook = pgTable(
       foreignColumns: [userBook.userId, userBook.id],
     }).onDelete('cascade'),
     index('stack_book_user_book_idx').on(t.userBookId),
+  ],
+);
+
+/**
+ * A pull from a progress source (the simulated Kindle). The API only inserts a queued row;
+ * a worker claims it with FOR UPDATE SKIP LOCKED, so any number of workers can run
+ * without two of them taking the same job.
+ */
+export const syncRun = pgTable(
+  'sync_run',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => appUser.id, { onDelete: 'cascade' }),
+    source: progressSource('source').notNull(),
+    status: syncStatus('status').notNull().default('queued'),
+    eventsIngested: integer('events_ingested').notNull().default(0),
+    error: text('error'),
+    createdAt: createdAt(),
+    startedAt: timestamp('started_at', { withTimezone: true }),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+  },
+  (t) => [
+    // at most one queued/running sync per user: a double click can't start two
+    uniqueIndex('sync_run_one_active_per_user')
+      .on(t.userId)
+      .where(sql`${t.status} in ('queued', 'running')`),
+    // the worker's "next queued job" lookup
+    index('sync_run_queue_idx')
+      .on(t.createdAt)
+      .where(sql`${t.status} = 'queued'`),
+    index('sync_run_user_recent_idx').on(t.userId, t.createdAt.desc().nullsFirst()),
   ],
 );
 

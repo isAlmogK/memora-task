@@ -1366,6 +1366,245 @@
           "progress"
         ]
       }
+    },
+    "/v1/stats": {
+      "get": {
+        "operationId": "StatsController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadingStatsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Valid key, wrong scope (a device key on a user endpoint)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Your reading in numbers: books and pages, genres, months, days, streaks",
+        "tags": [
+          "stats"
+        ]
+      }
+    },
+    "/v1/sync-runs": {
+      "post": {
+        "operationId": "SyncController_start",
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncRunDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Valid key, wrong scope (a device key on a user endpoint)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start a Kindle sync (or get the one already in progress); poll it for status",
+        "tags": [
+          "sync"
+        ]
+      },
+      "get": {
+        "operationId": "SyncController_list",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 10,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SyncRunDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed (details has one message per field)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Valid key, wrong scope (a device key on a user endpoint)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Your sync runs, newest first",
+        "tags": [
+          "sync"
+        ]
+      }
+    },
+    "/v1/sync-runs/{id}": {
+      "get": {
+        "operationId": "SyncController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncRunDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed (details has one message per field)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Valid key, wrong scope (a device key on a user endpoint)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or it belongs to someone else (we don't say which)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "sync"
+        ]
+      }
     }
   },
   "info": {
@@ -2092,6 +2331,237 @@
         },
         "required": [
           "recorded"
+        ]
+      },
+      "YearAndAllTime": {
+        "type": "object",
+        "properties": {
+          "thisYear": {
+            "type": "number"
+          },
+          "allTime": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "thisYear",
+          "allTime"
+        ]
+      },
+      "GenreCount": {
+        "type": "object",
+        "properties": {
+          "genre": {
+            "type": "string"
+          },
+          "books": {
+            "type": "number"
+          },
+          "pages": {
+            "type": "number",
+            "description": "Sum of page counts of those books"
+          }
+        },
+        "required": [
+          "genre",
+          "books",
+          "pages"
+        ]
+      },
+      "MonthCount": {
+        "type": "object",
+        "properties": {
+          "month": {
+            "type": "string",
+            "example": "2026-09"
+          },
+          "books": {
+            "type": "number",
+            "description": "Books finished that month"
+          },
+          "pages": {
+            "type": "number",
+            "description": "Pages read that month"
+          }
+        },
+        "required": [
+          "month",
+          "books",
+          "pages"
+        ]
+      },
+      "DayCount": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "string",
+            "example": "2026-09-30"
+          },
+          "pages": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "day",
+          "pages"
+        ]
+      },
+      "Pace": {
+        "type": "object",
+        "properties": {
+          "pagesPerDay30d": {
+            "type": "number",
+            "description": "Pages read in the last 30 days ÷ 30, one decimal"
+          },
+          "currentStreakDays": {
+            "type": "number",
+            "description": "Consecutive reading days ending today (or yesterday)"
+          },
+          "longestStreakDays": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "pagesPerDay30d",
+          "currentStreakDays",
+          "longestStreakDays"
+        ]
+      },
+      "FastestFinish": {
+        "type": "object",
+        "properties": {
+          "libraryBookId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "days": {
+            "type": "number",
+            "description": "Days from the first reading event to finished (at least 1)"
+          }
+        },
+        "required": [
+          "libraryBookId",
+          "title",
+          "days"
+        ]
+      },
+      "ReadingStatsDto": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "number"
+          },
+          "booksFinished": {
+            "$ref": "#/components/schemas/YearAndAllTime"
+          },
+          "pagesRead": {
+            "$ref": "#/components/schemas/YearAndAllTime"
+          },
+          "genres": {
+            "description": "Books finished this year by primary genre, most first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GenreCount"
+            }
+          },
+          "monthly": {
+            "description": "The last 12 calendar months, oldest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MonthCount"
+            }
+          },
+          "daily": {
+            "description": "The last 182 days (26 weeks), oldest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DayCount"
+            }
+          },
+          "pace": {
+            "$ref": "#/components/schemas/Pace"
+          },
+          "fastestFinish": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FastestFinish"
+              }
+            ]
+          }
+        },
+        "required": [
+          "year",
+          "booksFinished",
+          "pagesRead",
+          "genres",
+          "monthly",
+          "daily",
+          "pace",
+          "fastestFinish"
+        ]
+      },
+      "SyncRunDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "device",
+              "kindle_sim"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed"
+            ],
+            "description": "queued → running → succeeded | failed"
+          },
+          "eventsIngested": {
+            "type": "number",
+            "description": "Events recorded so far (counts up while running)"
+          },
+          "error": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "finishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "source",
+          "status",
+          "eventsIngested",
+          "error",
+          "createdAt",
+          "startedAt",
+          "finishedAt"
         ]
       }
     }

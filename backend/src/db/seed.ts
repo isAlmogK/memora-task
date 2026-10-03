@@ -178,6 +178,17 @@ async function seed() {
       );
     }
 
+    // the "synced 2 hours ago" the header shows on first load
+    await tx.insert(schema.syncRun).values({
+      userId: alice!.id,
+      source: 'kindle_sim',
+      status: 'succeeded',
+      eventsIngested: 3,
+      createdAt: new Date(now - 2 * HOUR - 40_000),
+      startedAt: new Date(now - 2 * HOUR - 38_000),
+      finishedAt: new Date(now - 2 * HOUR),
+    });
+
     // Bob: a small, separate library, there to prove one user can't see another's data.
     const [bobBook] = await tx
       .insert(schema.userBook)
